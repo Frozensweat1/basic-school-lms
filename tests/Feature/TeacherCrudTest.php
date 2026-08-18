@@ -1,0 +1,4 @@
+<?php
+namespace Tests\Feature;
+use App\Livewire\LMS\Teachers\Index; use App\Models\School; use App\Models\User; use Illuminate\Foundation\Testing\RefreshDatabase; use Livewire\Livewire; use Spatie\Permission\Models\Role; use Tests\TestCase;
+class TeacherCrudTest extends TestCase { use RefreshDatabase; public function test_school_admin_can_add_a_teacher():void { Role::create(['name'=>'school_admin']);$user=User::factory()->create();$user->assignRole('school_admin');$school=School::create(['name'=>'BrightStar Academy','code'=>'BSA']);Livewire::actingAs($user)->test(Index::class)->call('create')->set('employeeId','T-001')->set('firstName','Ama')->set('lastName','Mensah')->set('email','ama@example.test')->call('save')->assertHasNoErrors();$this->assertDatabaseHas('teachers',['school_id'=>$school->id,'employee_id'=>'T-001','first_name'=>'Ama']);} }

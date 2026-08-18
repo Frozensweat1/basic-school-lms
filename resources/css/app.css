@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/*
+ * Modal safety layer
+ *
+ * LMS pages have fixed/sticky navigation chrome. These rules deliberately
+ * override local utility classes so every server-rendered modal always
+ * covers that chrome and its backdrop fills the complete viewport.
+ */
+[role='dialog'].fixed.inset-0 {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    z-index: 9999 !important;
+    min-height: 100dvh !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    background-color: rgba(2, 6, 23, 0.78) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+}
+
+[role='dialog'].fixed.inset-0 > div {
+    position: relative;
+    z-index: 1;
+    box-shadow:
+        0 32px 80px rgba(2, 6, 23, 0.55),
+        0 0 0 1px rgba(255, 255, 255, 0.16) !important;
+}

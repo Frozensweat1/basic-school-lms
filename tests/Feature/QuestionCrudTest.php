@@ -1,0 +1,4 @@
+<?php
+namespace Tests\Feature;
+use App\Livewire\LMS\Questions\Index; use App\Models\{School,User}; use Illuminate\Foundation\Testing\RefreshDatabase; use Livewire\Livewire; use Spatie\Permission\Models\Role; use Tests\TestCase;
+class QuestionCrudTest extends TestCase { use RefreshDatabase; public function test_school_admin_can_create_a_multiple_choice_question():void { Role::create(['name'=>'school_admin']);$user=User::factory()->create();$user->assignRole('school_admin');$school=School::create(['name'=>'BrightStar Academy','code'=>'BSA']);Livewire::actingAs($user)->test(Index::class)->call('create')->set('type','multiple_choice')->set('prompt','What is 2 + 2?')->set('optionsText',"3\n4")->set('correctAnswer','4')->call('save')->assertHasNoErrors();$this->assertDatabaseHas('questions',['school_id'=>$school->id,'prompt'=>'What is 2 + 2?']);$this->assertDatabaseHas('question_options',['label'=>'4','is_correct'=>true]);} }
