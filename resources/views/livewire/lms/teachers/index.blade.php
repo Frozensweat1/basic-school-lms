@@ -58,6 +58,8 @@
             </table>
         </div>
     </div>
+    <x-pagination :paginator="$teachers" />
+
     <x-modal :show="$showFormModal" :title="$editingId ? 'Edit teacher' : 'Add teacher'" close-action="closeModals" max-width="xl">
         <form wire:submit="save" class="space-y-5">
             <div class="grid gap-5 sm:grid-cols-2">

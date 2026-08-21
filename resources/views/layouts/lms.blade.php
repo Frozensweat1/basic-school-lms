@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>LMS Dashboard</title>
+        @livewireStyles
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="h-dvh overflow-hidden bg-slate-100 text-slate-900 antialiased">
@@ -57,7 +58,6 @@
 
         <div id="sidebar-backdrop" class="fixed inset-0 z-20 hidden bg-slate-950/40 md:hidden"></div>
 
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
             (function () {
                 const sidebar = document.getElementById('lms-sidebar');
@@ -203,5 +203,6 @@
                 }
             }
         </style>
+        @livewireScripts
     </body>
 </html>

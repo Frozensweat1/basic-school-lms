@@ -1,15 +1,14 @@
+@php($branding = app(\App\Support\SchoolBranding::class)->data())
 <div class="bg-white">
+    <x-website.hero eyebrow="Join our community" :title="$page?->hero_title ?: 'Admissions'" :description="$page?->hero_subtitle ?: 'Begin your child’s educational journey. Learn about our enrollment process, requirements, and next steps.'" :action="route('website.contact')" action-label="Talk to admissions" />
     <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        <div class="mx-auto max-w-3xl text-center">
-            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Join our community</p>
-            <h1 class="mt-3 text-4xl font-bold text-slate-900 sm:text-5xl">Admissions</h1>
-            <p class="mt-4 text-lg text-slate-600">Begin your child's educational journey at BrightStar Academy. Learn about our enrollment process, requirements, and next steps.</p>
-        </div>
-
         <div class="mt-12 grid gap-8 lg:grid-cols-2">
             <div class="rounded-2xl bg-slate-50 p-8 shadow-sm ring-1 ring-slate-200">
                 <h2 class="text-2xl font-bold text-slate-900">Application Process</h2>
                 <ol class="mt-6 space-y-4 text-slate-700">
+                    @if($page?->content['steps'] ?? null)
+                        @foreach($page->content['steps'] as $step)<li class="flex gap-4"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700">{{ $loop->iteration }}</span><div><p class="font-semibold">{{ $step }}</p></div></li>@endforeach
+                    @else
                     <li class="flex gap-4">
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700">1</span>
                         <div>
@@ -38,7 +37,7 @@
                             <p class="text-sm text-slate-600">Complete enrollment paperwork and pay fees.</p>
                         </div>
                     </li>
-                </ol>
+                    @endif</ol>
             </div>
 
             <div class="rounded-2xl bg-slate-50 p-8 shadow-sm ring-1 ring-slate-200">
@@ -67,7 +66,7 @@
                 </ul>
 
                 <div class="mt-8">
-                    <a href="#" class="inline-flex w-full justify-center rounded-full bg-blue-900 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-800">Start application</a>
+                    <a href="mailto:{{ $branding['email'] }}" class="inline-flex w-full justify-center rounded-full bg-blue-900 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-800">Start application</a>
                 </div>
             </div>
         </div>
@@ -82,7 +81,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <svg class="h-5 w-5 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.07 5.222a2 2 0 002.86 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    <span class="text-sm font-medium">admissions@brightstar.academy</span>
+                    <span class="text-sm font-medium">{{ $branding['email'] }}</span>
                 </div>
             </div>
         </div>

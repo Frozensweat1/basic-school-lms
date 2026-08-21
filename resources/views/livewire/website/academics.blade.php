@@ -1,12 +1,12 @@
 <div class="bg-white">
+    <x-website.hero eyebrow="Our academic programs" :title="$page?->hero_title ?: 'Comprehensive education for every learner'" :description="$page?->hero_subtitle ?: 'Discover our curriculum, teaching methods, and learning outcomes that prepare students for success.'" />
     <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        <div class="mb-12 text-center">
-            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Our academic programs</p>
-            <h1 class="mt-3 text-4xl font-bold text-slate-900 sm:text-5xl">Comprehensive education for every learner</h1>
-            <p class="mt-4 text-lg text-slate-600">Discover our curriculum, teaching methods, and learning outcomes that prepare students for success.</p>
-        </div>
-
         <div class="grid gap-12 lg:grid-cols-3">
+            @if($page?->programs)
+                @foreach($page->programs as $program)
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-8 transition-shadow hover:shadow-lg"><div class="mb-4 inline-flex rounded-full bg-blue-100 p-3 text-blue-700">📚</div><h3 class="text-2xl font-bold text-slate-900">{{ $program['title'] ?? 'Programme' }}</h3><p class="mt-3 text-slate-600">{{ $program['description'] ?? '' }}</p><div class="mt-6"><a href="{{ route('website.contact') }}" class="text-sm font-semibold text-blue-900 hover:text-blue-800">Ask about this programme →</a></div></div>
+                @endforeach
+            @else
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-8 transition-shadow hover:shadow-lg">
                 <div class="mb-4 inline-flex rounded-full bg-blue-100 p-3 text-blue-700">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
@@ -20,7 +20,7 @@
                     <li>• Physical education and wellness</li>
                 </ul>
                 <div class="mt-6">
-                    <a href="#" class="text-sm font-semibold text-blue-900 hover:text-blue-800">Learn more →</a>
+                    <a href="{{ route('website.contact') }}" class="text-sm font-semibold text-blue-900 hover:text-blue-800">Ask about this programme →</a>
                 </div>
             </div>
 
@@ -37,7 +37,7 @@
                     <li>University preparation</li>
                 </ul>
                 <div class="mt-6">
-                    <a href="#" class="text-sm font-semibold text-blue-900 hover:text-blue-800">Learn more →</a>
+                    <a href="{{ route('website.contact') }}" class="text-sm font-semibold text-blue-900 hover:text-blue-800">Ask about this programme →</a>
                 </div>
             </div>
 
@@ -54,17 +54,18 @@
                     <li>• Community service projects</li>
                 </ul>
                 <div class="mt-6">
-                    <a href="#" class="text-sm font-semibold text-blue-900 hover:text-blue-800">Learn more →</a>
+                    <a href="{{ route('website.contact') }}" class="text-sm font-semibold text-blue-900 hover:text-blue-800">Ask about this programme →</a>
                 </div>
             </div>
+            @endif
         </div>
 
         <div class="mt-16 rounded-2xl bg-slate-900 p-12 text-white text-center">
             <h2 class="text-3xl font-bold">Ready to begin your child's educational journey?</h2>
             <p class="mt-4 text-lg text-slate-300">Schedule a campus tour or request more information about our programs.</p>
             <div class="mt-8 flex flex-wrap justify-center gap-4">
-                <a href="#" class="rounded-full bg-white px-6 py-3 text-sm font-semibold text-blue-900 shadow-sm hover:bg-slate-100">Request information</a>
-                <a href="#" class="rounded-full border border-slate-400 px-6 py-3 text-sm font-semibold text-white hover:border-slate-300">Schedule tour</a>
+                <a href="{{ route('website.contact') }}" class="rounded-full bg-white px-6 py-3 text-sm font-semibold text-blue-900 shadow-sm hover:bg-slate-100">Request information</a>
+                <a href="{{ route('website.contact') }}" class="rounded-full border border-slate-400 px-6 py-3 text-sm font-semibold text-white hover:border-slate-300">Schedule tour</a>
             </div>
         </div>
     </div>

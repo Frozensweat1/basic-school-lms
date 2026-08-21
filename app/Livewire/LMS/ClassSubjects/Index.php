@@ -13,12 +13,14 @@ use Illuminate\Validation\ValidationException;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Throwable;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
     use AuthorizesRequests;
+    use WithPagination;
 
     public bool $showFormModal = false;
     public bool $showDeleteModal = false;
@@ -157,7 +159,7 @@ class Index extends Component
             'classSubjects' => ClassSubject::with(['schoolClass.academicYear', 'subject', 'teacher'])
                 ->when($schoolId, fn ($query) => $query->whereHas('schoolClass.academicYear', fn ($classes) => $classes->where('school_id', $schoolId)))
                 ->orderBy('school_class_id')
-                ->get(),
+                ->paginate(15),
             'classes' => SchoolClass::with('academicYear')
                 ->when($schoolId, fn ($query) => $query->whereHas('academicYear', fn ($years) => $years->where('school_id', $schoolId)))
                 ->where('status', 'active')

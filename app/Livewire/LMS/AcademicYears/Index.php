@@ -11,14 +11,18 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Throwable;
+use Livewire\WithPagination;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
-    public bool $showFormModal = false;
-    public bool $showDeleteModal = false;
+    use WithPagination;
+
+    public bool $showForm = false;
+    public bool $showDeleteConfirmation = false;
     public ?int $editingId = null;
     public ?int $deletingId = null;
+    public string $search = '';
     public string $name = '';
     public string $startsAt = '';
     public string $endsAt = '';
@@ -33,11 +37,17 @@ class Index extends Component
     {
         $this->authorize('create', AcademicYear::class);
         $this->resetForm();
-        $this->showFormModal = true;
+        $this->showForm = true;
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
     }
 
     public function edit(AcademicYear $academicYear): void
     {
+        $this->ensureSchoolRecord($academicYear);
         $this->authorize('update', $academicYear);
         $this->editingId = $academicYear->id;
         $this->name = $academicYear->name;
@@ -45,12 +55,15 @@ class Index extends Component
         $this->endsAt = $academicYear->ends_at->toDateString();
         $this->isActive = $academicYear->is_active;
         $this->resetValidation();
-        $this->showFormModal = true;
+        $this->showForm = true;
     }
 
     public function save(): void
     {
         $year = $this->editingId ? AcademicYear::findOrFail($this->editingId) : null;
+        if ($year) {
+            $this->ensureSchoolRecord($year);
+        }
         $this->authorize($year ? 'update' : 'create', $year ?? AcademicYear::class);
 
         $schoolId = $year?->school_id ?? School::query()->value('id');
@@ -81,8 +94,9 @@ class Index extends Component
             );
         });
 
-        $this->showFormModal = false;
+        $this->showForm = false;
         $this->resetForm();
+        $this->resetPage();
         LivewireAlert::title($year ? 'Academic year updated' : 'Academic year created')->success()->asToast()->position('top-end')->show();
         } catch (ValidationException $exception) {
             LivewireAlert::title('Check the form')->text('Correct the highlighted fields and try again.')->error()->asToast()->position('top-end')->show();
@@ -95,14 +109,16 @@ class Index extends Component
 
     public function confirmDelete(AcademicYear $academicYear): void
     {
+        $this->ensureSchoolRecord($academicYear);
         $this->authorize('delete', $academicYear);
         $this->deletingId = $academicYear->id;
-        $this->showDeleteModal = true;
+        $this->showDeleteConfirmation = true;
     }
 
     public function delete(): void
     {
         $year = AcademicYear::findOrFail($this->deletingId);
+        $this->ensureSchoolRecord($year);
         $this->authorize('delete', $year);
 
         if ($year->is_active || $year->terms()->exists() || $year->classes()->exists()) {
@@ -113,8 +129,9 @@ class Index extends Component
 
         try {
             $year->delete();
-            $this->showDeleteModal = false;
+            $this->showDeleteConfirmation = false;
             $this->deletingId = null;
+            $this->resetPage();
             LivewireAlert::title('Academic year deleted')->success()->asToast()->position('top-end')->show();
         } catch (Throwable $exception) {
             report($exception);
@@ -122,11 +139,17 @@ class Index extends Component
         }
     }
 
-    public function closeModals(): void
+    public function closeForm(): void
     {
-        $this->showFormModal = false;
-        $this->showDeleteModal = false;
+        $this->showForm = false;
         $this->resetForm();
+        $this->resetErrorBag();
+    }
+
+    public function cancelDelete(): void
+    {
+        $this->showDeleteConfirmation = false;
+        $this->deletingId = null;
         $this->resetErrorBag();
     }
 
@@ -136,10 +159,27 @@ class Index extends Component
         $this->resetValidation();
     }
 
+    private function schoolId(): int
+    {
+        return (int) School::query()->value('id');
+    }
+
+    private function ensureSchoolRecord(AcademicYear $academicYear): void
+    {
+        abort_unless((int) $academicYear->school_id === $this->schoolId(), 404);
+    }
+
     public function render()
     {
+        $search = trim($this->search);
+
         return view('livewire.lms.academic-years.index', [
-            'years' => AcademicYear::query()->withCount(['terms', 'classes'])->orderByDesc('starts_at')->get(),
+            'years' => AcademicYear::query()
+                ->where('school_id', $this->schoolId())
+                ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
+                ->withCount(['terms', 'classes'])
+                ->orderByDesc('starts_at')
+                ->paginate(15),
         ]);
     }
 }

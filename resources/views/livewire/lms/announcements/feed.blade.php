@@ -1,0 +1,4 @@
+<div class="space-y-6">
+    <div><p class="text-xs font-semibold uppercase tracking-[.22em] text-slate-500">Communication</p><h2 class="mt-2 text-2xl font-bold">Announcements</h2><p class="mt-1 text-sm text-slate-600">Updates relevant to your school, classes, and subjects.</p></div>
+    <div class="grid gap-4">@forelse($announcements as $announcement)<article class="rounded-2xl border border-slate-200 bg-white p-5"><h3 class="font-semibold text-slate-900">{{ $announcement->title }}</h3><p class="mt-1 text-xs text-slate-500">{{ $announcement->published_at->format('d M Y, H:i') }}</p><div class="prose prose-sm mt-3 max-w-none">{!! strip_tags($announcement->content, '<p><br><strong><em><u><ol><ul><li><blockquote><h2><h3><h4>') !!}</div></article>@empty<div class="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-500">No relevant announcements published.</div>@endforelse</div>
+</div>

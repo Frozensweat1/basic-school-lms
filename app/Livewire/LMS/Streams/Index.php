@@ -1,11 +1,12 @@
 <?php
 namespace App\Livewire\LMS\Streams;
-use App\Models\School; use App\Models\Stream; use Illuminate\Foundation\Auth\Access\AuthorizesRequests; use Illuminate\Validation\Rule; use Illuminate\Validation\ValidationException; use Jantinnerezo\LivewireAlert\Facades\LivewireAlert; use Livewire\Attributes\Layout; use Livewire\Component; use Throwable;
+use App\Models\School; use App\Models\Stream; use Illuminate\Foundation\Auth\Access\AuthorizesRequests; use Illuminate\Validation\Rule; use Illuminate\Validation\ValidationException; use Jantinnerezo\LivewireAlert\Facades\LivewireAlert; use Livewire\Attributes\Layout; use Livewire\Component; use Livewire\WithPagination; use Throwable;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
     use AuthorizesRequests;
+    use WithPagination;
     public bool $showFormModal=false,$showDeleteModal=false,$isActive=true;
     public ?int $editingId=null,$deletingId=null;
     public string $name='', $description='';
@@ -17,5 +18,5 @@ class Index extends Component
     public function delete():void{$stream=Stream::findOrFail($this->deletingId);$this->authorize('delete',$stream);if($stream->classes()->exists()){$this->addError('delete','Streams assigned to classes cannot be deleted. Archive the stream instead.');LivewireAlert::title('Stream cannot be deleted')->warning()->asToast()->position('top-end')->show();return;}try{$stream->delete();$this->showDeleteModal=false;$this->deletingId=null;LivewireAlert::title('Stream deleted')->success()->asToast()->position('top-end')->show();}catch(Throwable $e){report($e);LivewireAlert::title('Unable to delete stream')->error()->asToast()->position('top-end')->show();}}
     public function closeModals():void{$this->showFormModal=false;$this->showDeleteModal=false;$this->resetForm();$this->resetErrorBag();}
     private function resetForm():void{$this->reset(['editingId','deletingId','name','description','isActive']);$this->isActive=true;$this->resetValidation();}
-    public function render(){return view('livewire.lms.streams.index',['streams'=>Stream::withCount('classes')->orderBy('name')->get()]);}
+    public function render(){return view('livewire.lms.streams.index',['streams'=>Stream::withCount('classes')->orderBy('name')->paginate(15)]);}
 }

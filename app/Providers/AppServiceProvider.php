@@ -25,6 +25,7 @@ use App\Models\Lesson;
 use App\Models\GradingScale;
 use App\Models\ReportCard;
 use App\Models\Term;
+use App\Models\Examination;
 use App\Policies\AcademicYearPolicy;
 use App\Policies\AnnouncementPolicy;
 use App\Policies\AssignmentPolicy;
@@ -48,6 +49,7 @@ use App\Policies\LessonPolicy;
 use App\Policies\GradingScalePolicy;
 use App\Policies\ReportCardPolicy;
 use App\Policies\TermPolicy;
+use App\Policies\ExaminationPolicy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
@@ -94,5 +96,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Question::class, QuestionPolicy::class);
         Gate::policy(Lesson::class, LessonPolicy::class);
         Gate::policy(Term::class, TermPolicy::class);
+        Gate::policy(Examination::class, ExaminationPolicy::class);
     }
 }

@@ -47,6 +47,10 @@ class Index extends Component
                 'password' => [$user ? 'nullable' : 'required', 'string', 'min:10'],
                 'role' => ['required', Rule::exists('roles', 'name')],
             ]);
+            if (auth()->user()->hasRole('school_admin') && $data['role'] === 'super_admin') {
+                $this->addError('role', 'School administrators cannot assign the super administrator role.');
+                return;
+            }
             if ($user?->id === auth()->id() && $data['role'] !== $user->roles->first()?->name) {
                 $this->addError('role', 'You cannot change your own role.');
                 return;
@@ -65,5 +69,5 @@ class Index extends Component
     public function delete(): void { $user=User::findOrFail($this->deletingId); $this->authorize('delete',$user); try { $user->delete(); $this->showDeleteModal=false; LivewireAlert::title('User deleted')->success()->asToast()->show(); } catch(Throwable $e){report($e);LivewireAlert::title('Unable to delete user')->error()->asToast()->show();} }
     public function closeModals(): void { $this->showFormModal=false;$this->showDeleteModal=false;$this->resetForm();$this->resetErrorBag(); }
     private function resetForm(): void { $this->reset(['editingId','deletingId','name','email','password','role']);$this->resetValidation(); }
-    public function render() { return view('livewire.lms.users.index',['users'=>User::with('roles')->where(fn($q)=>$q->where('name','like',"%{$this->search}%")->orWhere('email','like',"%{$this->search}%"))->latest()->paginate(25),'roles'=>Role::orderBy('name')->get()]); }
+    public function render() { return view('livewire.lms.users.index',['users'=>User::with('roles')->where(fn($q)=>$q->where('name','like',"%{$this->search}%")->orWhere('email','like',"%{$this->search}%"))->when(auth()->user()->hasRole('school_admin'),fn($q)=>$q->whereDoesntHave('roles',fn($roles)=>$roles->where('name','super_admin')))->latest()->paginate(25),'roles'=>Role::when(auth()->user()->hasRole('school_admin'),fn($q)=>$q->where('name','!=','super_admin'))->orderBy('name')->get()]); }
 }

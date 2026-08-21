@@ -1,6 +1,40 @@
 <div class="mx-auto max-w-4xl space-y-6 rounded-2xl bg-white p-8 shadow print:shadow-none">
-    <div class="flex justify-between border-b pb-5"><div><p class="text-sm font-semibold">BrightStar Academy</p><h2 class="text-2xl font-bold">Student Report Card</h2><p class="text-sm text-slate-500">{{ $reportCard->term->name }} · {{ $reportCard->academicYear->name }}</p></div><button onclick="window.print()" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white print:hidden">Print</button></div>
-    <div class="grid gap-4 text-sm sm:grid-cols-2"><p><strong>Student:</strong> {{ $reportCard->student->first_name }} {{ $reportCard->student->last_name }}</p><p><strong>Class:</strong> {{ $reportCard->schoolClass->name }}</p><p><strong>Attendance:</strong> {{ $reportCard->attendance_percentage ?? '—' }}%</p><p><strong>Status:</strong> {{ ucfirst($reportCard->status) }}</p></div>
-    <table class="min-w-full divide-y divide-slate-200 text-sm"><thead class="bg-slate-50"><tr><th class="px-3 py-2 text-left">Subject</th><th class="px-3 py-2 text-left">Score</th><th class="px-3 py-2 text-left">Grade</th><th class="px-3 py-2 text-left">Comment</th></tr></thead><tbody>@foreach($results as $result)<tr><td class="px-3 py-2">{{ $result->classSubject->subject->name }}</td><td class="px-3 py-2">{{ $result->total_score }}</td><td class="px-3 py-2">{{ $result->grade }}</td><td class="px-3 py-2">{{ $result->teacher_comment }}</td></tr>@endforeach</tbody></table>
-    <div class="grid gap-4 border-t pt-4 text-sm sm:grid-cols-2"><p><strong>Teacher comment:</strong><br>{{ $reportCard->teacher_comment }}</p><p><strong>Headteacher comment:</strong><br>{{ $reportCard->headteacher_comment }}</p></div>
+    <div class="flex justify-between border-b pb-5">
+        <div>
+            <p class="text-sm font-semibold">BrightStar Academy</p>
+            <h2 class="text-2xl font-bold">Student Report Card</h2>
+            <p class="text-sm text-slate-500">{{ $reportCard->term->name }} · {{ $reportCard->academicYear->name }}</p>
+        </div><button onclick="window.print()"
+            class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white print:hidden">Print</button>
+    </div>
+    <div class="grid gap-4 text-sm sm:grid-cols-2">
+        <p><strong>Student:</strong> {{ $reportCard->student->first_name }} {{ $reportCard->student->last_name }}</p>
+        <p><strong>Class:</strong> {{ $reportCard->schoolClass->name }}</p>
+        <p><strong>Attendance:</strong> {{ $reportCard->attendance_percentage ?? '—' }}%</p>
+        <p><strong>Status:</strong> {{ ucfirst($reportCard->status) }}</p>
+    </div>
+    <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50">
+            <tr>
+                <th class="px-3 py-2 text-left">Subject</th>
+                <th class="px-3 py-2 text-left">Score</th>
+                <th class="px-3 py-2 text-left">Grade</th>
+                <th class="px-3 py-2 text-left">Comment</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($results as $result)
+                <tr>
+                    <td class="px-3 py-2">{{ $result->classSubject->subject->name }}</td>
+                    <td class="px-3 py-2">{{ $result->total_score }}</td>
+                    <td class="px-3 py-2">{{ $result->grade }}</td>
+                    <td class="px-3 py-2">{{ $result->teacher_comment }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+    <div class="grid gap-4 border-t pt-4 text-sm sm:grid-cols-2">
+        <p><strong>Teacher comment:</strong><br>{{ $reportCard->teacher_comment }}</p>
+        <p><strong>Headteacher comment:</strong><br>{{ $reportCard->headteacher_comment }}</p>
+    </div>
 </div>

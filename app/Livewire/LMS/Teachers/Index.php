@@ -1,11 +1,12 @@
 <?php
 namespace App\Livewire\LMS\Teachers;
-use App\Models\School; use App\Models\Teacher; use Illuminate\Foundation\Auth\Access\AuthorizesRequests; use Illuminate\Validation\Rule; use Illuminate\Validation\ValidationException; use Jantinnerezo\LivewireAlert\Facades\LivewireAlert; use Livewire\Attributes\Layout; use Livewire\Component; use Throwable;
+use App\Models\School; use App\Models\Teacher; use Illuminate\Foundation\Auth\Access\AuthorizesRequests; use Illuminate\Validation\Rule; use Illuminate\Validation\ValidationException; use Jantinnerezo\LivewireAlert\Facades\LivewireAlert; use Livewire\Attributes\Layout; use Livewire\Component; use Livewire\WithPagination; use Throwable;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
     use AuthorizesRequests;
+    use WithPagination;
     public bool $showFormModal=false,$showDeleteModal=false; public ?int $editingId=null,$deletingId=null;
     public string $employeeId='',$firstName='',$middleName='',$lastName='',$phone='',$email='',$employmentDate='',$status='active';
     public function mount():void{$this->authorize('viewAny',Teacher::class);}
@@ -16,5 +17,5 @@ class Index extends Component
     public function delete():void{$teacher=Teacher::findOrFail($this->deletingId);$this->authorize('delete',$teacher);if($teacher->classSubjects()->exists()||$teacher->classes()->exists()){$this->addError('delete','Teachers with class assignments must be marked inactive instead.');LivewireAlert::title('Teacher cannot be deleted')->warning()->asToast()->position('top-end')->show();return;}try{$teacher->delete();$this->showDeleteModal=false;$this->deletingId=null;LivewireAlert::title('Teacher archived')->success()->asToast()->position('top-end')->show();}catch(Throwable $e){report($e);LivewireAlert::title('Unable to archive teacher')->error()->asToast()->position('top-end')->show();}}
     public function closeModals():void{$this->showFormModal=false;$this->showDeleteModal=false;$this->resetForm();$this->resetErrorBag();}
     private function resetForm():void{$this->reset(['editingId','deletingId','employeeId','firstName','middleName','lastName','phone','email','employmentDate','status']);$this->status='active';$this->resetValidation();}
-    public function render(){return view('livewire.lms.teachers.index',['teachers'=>Teacher::withCount(['classes','classSubjects'])->orderBy('last_name')->get()]);}
+    public function render(){return view('livewire.lms.teachers.index',['teachers'=>Teacher::withCount(['classes','classSubjects'])->orderBy('last_name')->paginate(15)]);}
 }

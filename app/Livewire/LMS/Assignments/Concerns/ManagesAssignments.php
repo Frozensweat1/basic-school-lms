@@ -2,12 +2,14 @@
 
 namespace App\Livewire\LMS\Assignments\Concerns;
 
+use App\Support\ContentSanitizer;
 use App\Models\Assignment;
 use App\Models\ClassSubject;
 use App\Models\Lesson;
 use App\Models\School;
 use App\Models\Teacher;
 use App\Models\Topic;
+use App\Support\LmsNotifier;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -104,7 +106,8 @@ abstract class ManagesAssignments extends Component
             $teacherId = $this->teacherIdFor($data, $classSubject);
             abort_unless(Teacher::whereKey($teacherId)->where('school_id', $this->schoolId())->exists(), 422, 'Choose a teacher belonging to this school.');
 
-            Assignment::updateOrCreate(
+            $wasPublished = $assignment?->status === 'published';
+            $savedAssignment = Assignment::updateOrCreate(
                 ['id' => $assignment?->id],
                 [
                     'class_subject_id' => $classSubject->id,
@@ -112,7 +115,7 @@ abstract class ManagesAssignments extends Component
                     'lesson_id' => $lesson?->id,
                     'teacher_id' => $teacherId,
                     'title' => $data['title'],
-                    'instructions' => $data['instructions'],
+                    'instructions' => app(ContentSanitizer::class)->clean($data['instructions']),
                     'max_score' => $data['maxScore'],
                     'opens_at' => filled($data['opensAt']) ? Carbon::parse($data['opensAt']) : null,
                     'due_at' => Carbon::parse($data['dueAt']),
@@ -120,6 +123,16 @@ abstract class ManagesAssignments extends Component
                     'status' => $data['status'],
                 ],
             );
+
+            if ($savedAssignment->status === 'published' && ! $wasPublished) {
+                LmsNotifier::send(
+                    LmsNotifier::classAudience($classSubject->schoolClass),
+                    'New assignment available',
+                    $savedAssignment->title.' is now available for your class.',
+                    null,
+                    'assignment',
+                );
+            }
 
             $this->showFormModal = false;
             $this->resetForm();

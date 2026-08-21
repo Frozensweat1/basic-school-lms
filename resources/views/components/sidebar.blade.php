@@ -1,3 +1,73 @@
+@php
+    $sidebarUser = auth()->user();
+    $sidebarRole = $sidebarUser?->hasRole('teacher')
+        ? 'teacher'
+        : ($sidebarUser?->hasRole('student') ? 'student' : ($sidebarUser?->hasRole('parent') ? 'parent' : 'admin'));
+
+    $sidebarRoutes = [
+        'lessons' => [
+            'admin' => 'lms.lessons.admin.index',
+            'teacher' => 'lms.lessons.teacher.index',
+            'student' => 'lms.lessons.student.index',
+            'parent' => 'lms.lessons.parent.index',
+        ],
+        'topics' => [
+            'admin' => 'lms.topics.admin.index',
+            'teacher' => 'lms.topics.teacher.index',
+            'student' => 'lms.lessons.student.index',
+            'parent' => 'lms.lessons.parent.index',
+        ],
+        'assignments' => [
+            'admin' => 'lms.assignments.admin.index',
+            'teacher' => 'lms.assignments.teacher.index',
+            'student' => 'lms.assignments.student.index',
+            'parent' => 'lms.assignments.parent.index',
+        ],
+        'quizzes' => [
+            'admin' => 'lms.quizzes.admin.index',
+            'teacher' => 'lms.quizzes.teacher.index',
+            'student' => 'lms.quizzes.student.index',
+            'parent' => 'lms.quizzes.parent.index',
+        ],
+        'examinations' => [
+            'admin' => 'lms.examinations.index',
+            'teacher' => 'lms.examinations.index',
+            'student' => 'lms.examinations.student.index',
+            'parent' => 'lms.examinations.parent.index',
+        ],
+        'assessments' => [
+            'admin' => 'lms.assessments.admin.index',
+            'teacher' => 'lms.assessments.teacher.index',
+            'student' => 'lms.results.student.index',
+            'parent' => 'lms.results.parent.index',
+        ],
+        'attendance' => [
+            'admin' => 'lms.attendance.admin.overview',
+            'teacher' => 'lms.attendance.teacher.record',
+            'student' => 'lms.attendance.student.show',
+            'parent' => 'lms.attendance.parent.show',
+        ],
+        'timetables' => [
+            'admin' => 'lms.timetables.admin.index',
+            'teacher' => 'lms.timetables.teacher.index',
+            'student' => 'lms.timetables.student.index',
+            'parent' => 'lms.timetables.parent.index',
+        ],
+        'reports' => [
+            'admin' => 'lms.reports.index',
+            'teacher' => 'lms.dashboard.teacher',
+            'student' => 'lms.reports.student.index',
+            'parent' => 'lms.reports.parent.index',
+        ],
+        'announcements' => [
+            'admin' => 'lms.announcements.admin.manage',
+            'teacher' => 'lms.announcements.teacher.manage',
+            'student' => 'lms.announcements.feed',
+            'parent' => 'lms.announcements.feed',
+        ],
+    ];
+@endphp
+
 <aside id="lms-sidebar" class="sidebar-panel fixed inset-y-0 left-0 z-30 flex h-dvh w-72 flex-col overflow-hidden border-r border-slate-200 bg-slate-900 text-slate-100 transition-all duration-200 ease-in-out">
     <div class="z-10 shrink-0 flex items-center justify-between border-b border-slate-800 bg-slate-900 px-3 py-4">
         <div class="flex min-w-0 items-center gap-3">
@@ -47,14 +117,6 @@
                     <span aria-hidden="true">📚</span>
                     <span class="nav-link-text">Subjects</span>
                 </a>
-                <a href="{{ route('lms.class-subjects.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.class-subjects.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
-                    <span aria-hidden="true">🔗</span>
-                    <span class="nav-link-text">Class Subjects</span>
-                </a>
-                <a href="{{ route('lms.schedule-periods.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.schedule-periods.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
-                    <span aria-hidden="true">⏱</span>
-                    <span class="nav-link-text">Schedule Periods</span>
-                </a>
             </div>
         </div>
 
@@ -79,13 +141,11 @@
         <div>
             <p class="nav-section-label mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Learning</p>
             <div class="space-y-1">
-                @php($lessonRoute = auth()->user()->hasRole('teacher') ? 'lms.lessons.teacher.index' : 'lms.lessons.admin.index')
-                <a href="{{ route($lessonRoute) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.lessons.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                <a href="{{ route($sidebarRoutes['lessons'][$sidebarRole]) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.lessons.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">📖</span>
                     <span class="nav-link-text">Lessons</span>
                 </a>
-                @php($topicRoute = auth()->user()->hasRole('teacher') ? 'lms.topics.teacher.index' : 'lms.topics.admin.index')
-                <a href="{{ route($topicRoute) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.topics.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                <a href="{{ route($sidebarRoutes['topics'][$sidebarRole]) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.topics.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">🔖</span>
                     <span class="nav-link-text">Topics</span>
                 </a>
@@ -95,22 +155,19 @@
         <div>
             <p class="nav-section-label mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Assessments</p>
             <div class="space-y-1">
-                @php($assignmentRoute = auth()->user()->hasRole('teacher') ? 'lms.assignments.teacher.index' : 'lms.assignments.admin.index')
-                <a href="{{ route($assignmentRoute) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.assignments.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                <a href="{{ route($sidebarRoutes['assignments'][$sidebarRole]) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.assignments.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">✍️</span>
                     <span class="nav-link-text">Assignments</span>
                 </a>
-                @php($quizRoute = auth()->user()->hasRole('teacher') ? 'lms.quizzes.teacher.index' : 'lms.quizzes.admin.index')
-                <a href="{{ route($quizRoute) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.quizzes.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                <a href="{{ route($sidebarRoutes['quizzes'][$sidebarRole]) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.quizzes.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">❓</span>
                     <span class="nav-link-text">Quizzes</span>
                 </a>
-                <a href="{{ route('lms.examinations.index') ?? '#' }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.examinations.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                <a href="{{ route($sidebarRoutes['examinations'][$sidebarRole]) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.examinations.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">📝</span>
                     <span class="nav-link-text">Examinations</span>
                 </a>
-                @php($assessmentRoute = auth()->user()->hasRole('teacher') ? 'lms.assessments.teacher.index' : 'lms.assessments.admin.index')
-                <a href="{{ route($assessmentRoute) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.assessments.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                <a href="{{ route($sidebarRoutes['assessments'][$sidebarRole]) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.assessments.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">📊</span>
                     <span class="nav-link-text">Assessments</span>
                 </a>
@@ -120,17 +177,15 @@
         <div>
             <p class="nav-section-label mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Records</p>
             <div class="space-y-1">
-                @php($attendanceRoute = auth()->user()->hasRole('teacher') ? 'lms.attendance.teacher.record' : 'lms.attendance.admin.overview')
-                <a href="{{ route($attendanceRoute) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.attendance.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                <a href="{{ route($sidebarRoutes['attendance'][$sidebarRole]) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.attendance.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">✅</span>
                     <span class="nav-link-text">Attendance</span>
                 </a>
-                @php($timetableRoute = auth()->user()->hasRole('teacher') ? 'lms.timetables.teacher.index' : 'lms.timetables.admin.index')
-                <a href="{{ route($timetableRoute) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.timetables.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                <a href="{{ route($sidebarRoutes['timetables'][$sidebarRole]) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.timetables.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">⏰</span>
                     <span class="nav-link-text">Timetables</span>
                 </a>
-                <a href="{{ route('lms.reports.index') ?? '#' }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.reports.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                <a href="{{ route($sidebarRoutes['reports'][$sidebarRole]) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.reports.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">📋</span>
                     <span class="nav-link-text">Reports</span>
                 </a>
@@ -140,8 +195,7 @@
         <div>
             <p class="nav-section-label mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Communication</p>
             <div class="space-y-1">
-                @php($announcementRoute = auth()->user()->hasRole('teacher') ? 'lms.announcements.teacher.manage' : (auth()->user()->hasAnyRole(['student','parent']) ? 'lms.announcements.feed' : 'lms.announcements.admin.manage'))
-                <a href="{{ route($announcementRoute) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.announcements.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                <a href="{{ route($sidebarRoutes['announcements'][$sidebarRole]) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.announcements.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">📢</span>
                     <span class="nav-link-text">Announcements</span>
                 </a>

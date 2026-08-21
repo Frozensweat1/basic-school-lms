@@ -11,10 +11,6 @@ class Teacher extends Model
 {
     use SoftDeletes;
 
-    protected $casts = [
-        'employment_date' => 'date',
-    ];
-
     protected $fillable = [
         'user_id',
         'school_id',
@@ -27,6 +23,14 @@ class Teacher extends Model
         'email',
         'employment_date',
         'status',
+        'is_featured_on_website',
+        'public_bio',
+        'website_display_order',
+    ];
+
+    protected $casts = [
+        'employment_date' => 'date',
+        'is_featured_on_website' => 'boolean',
     ];
 
     public function user(): BelongsTo

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Fortify;
 
@@ -21,7 +22,9 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register Fortify routes from this application's provider. This keeps
+        // route registration deterministic in the Laravel 12 bootstrap setup.
+        Fortify::ignoreRoutes();
     }
 
     /**
@@ -29,6 +32,9 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        require base_path('vendor/laravel/fortify/routes/routes.php');
+        RedirectIfAuthenticated::redirectUsing(fn () => route('lms.dashboard'));
+
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);

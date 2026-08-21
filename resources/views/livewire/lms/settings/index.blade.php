@@ -1,21 +1,29 @@
 <div class="space-y-6">
     <div class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Administration</p>
-            <h2 class="mt-1 text-2xl font-bold text-slate-900">Settings</h2>
-        </div>
-        <x-button variant="primary" size="md">Save changes</x-button>
+        <div><p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Administration</p><h2 class="mt-1 text-2xl font-bold text-slate-900">School settings</h2><p class="mt-1 text-sm text-slate-600">Manage the school profile, public website branding, and LMS preferences.</p></div>
+        <x-button type="submit" form="school-settings-form" variant="primary" icon="save" target="save" :loading="true">Save changes</x-button>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-2">
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 class="text-lg font-semibold text-slate-900">School profile</h3>
-            <p class="mt-2 text-sm text-slate-600">Update school name, contact details, and basic information.</p>
-        </div>
+    <form id="school-settings-form" wire:submit="save" class="grid gap-6 lg:grid-cols-2">
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h3 class="text-lg font-semibold text-slate-900">School profile</h3><div class="mt-5 space-y-4">
+            <div><label class="block text-sm font-medium text-slate-700">School name</label><input wire:model="name" class="mt-1 block w-full rounded-lg border-slate-300">@error('name')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror</div>
+            <div><label class="block text-sm font-medium text-slate-700">School code</label><input wire:model="code" class="mt-1 block w-full rounded-lg border-slate-300">@error('code')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror</div>
+            <div><label class="block text-sm font-medium text-slate-700">Motto</label><input wire:model="motto" class="mt-1 block w-full rounded-lg border-slate-300"></div>
+            <div class="grid gap-4 sm:grid-cols-2"><div><label class="block text-sm font-medium text-slate-700">Email</label><input wire:model="email" type="email" class="mt-1 block w-full rounded-lg border-slate-300"></div><div><label class="block text-sm font-medium text-slate-700">Phone</label><input wire:model="phone" class="mt-1 block w-full rounded-lg border-slate-300"></div></div>
+            <div><label class="block text-sm font-medium text-slate-700">Address</label><textarea wire:model="address" rows="3" class="mt-1 block w-full rounded-lg border-slate-300"></textarea></div>
+        </div></section>
 
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 class="text-lg font-semibold text-slate-900">System preferences</h3>
-            <p class="mt-2 text-sm text-slate-600">Configure notifications, security, and global app behavior.</p>
-        </div>
-    </div>
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h3 class="text-lg font-semibold text-slate-900">Brand identity</h3><p class="mt-1 text-sm text-slate-500">Used by the public website header, hero, footer, and portal surfaces.</p><div class="mt-5 space-y-4">
+            <div><label class="block text-sm font-medium text-slate-700">Logo</label><input wire:model="logo" type="file" accept="image/png,image/jpeg,image/webp" class="mt-1 block w-full rounded-lg border-slate-300 text-sm">@if($logo)<img src="{{ $logo->temporaryUrl() }}" alt="Logo preview" class="mt-3 h-16 w-16 rounded-xl object-cover ring-1 ring-slate-200">@elseif($logoPath)<p class="mt-2 text-xs text-slate-500">A logo is currently uploaded.</p>@else<p class="mt-2 text-xs text-slate-500">No logo uploaded. The website will use initials from the school name.</p>@endif @error('logo')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror</div>
+            <div class="grid gap-4 sm:grid-cols-3"><label class="text-sm">Primary<input wire:model="brandPrimary" type="color" class="mt-1 h-10 w-full rounded-lg border-slate-300 p-1"></label><label class="text-sm">Secondary<input wire:model="brandSecondary" type="color" class="mt-1 h-10 w-full rounded-lg border-slate-300 p-1"></label><label class="text-sm">Accent<input wire:model="brandAccent" type="color" class="mt-1 h-10 w-full rounded-lg border-slate-300 p-1"></label></div>
+            <div><label class="block text-sm font-medium text-slate-700">Hero headline</label><input wire:model="heroTitle" class="mt-1 block w-full rounded-lg border-slate-300"></div><div><label class="block text-sm font-medium text-slate-700">Hero supporting text</label><textarea wire:model="heroSubtitle" rows="2" class="mt-1 block w-full rounded-lg border-slate-300"></textarea></div><div><label class="block text-sm font-medium text-slate-700">Footer description</label><textarea wire:model="footerText" rows="2" class="mt-1 block w-full rounded-lg border-slate-300"></textarea></div>
+        </div></section>
+
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h3 class="text-lg font-semibold text-slate-900">Social links</h3><div class="mt-5 grid gap-4 sm:grid-cols-2"><div><label class="text-sm">Facebook URL</label><input wire:model="socialFacebook" type="url" class="mt-1 block w-full rounded-lg border-slate-300"></div><div><label class="text-sm">Instagram URL</label><input wire:model="socialInstagram" type="url" class="mt-1 block w-full rounded-lg border-slate-300"></div><div><label class="text-sm">YouTube URL</label><input wire:model="socialYoutube" type="url" class="mt-1 block w-full rounded-lg border-slate-300"></div><div><label class="text-sm">X URL</label><input wire:model="socialX" type="url" class="mt-1 block w-full rounded-lg border-slate-300"></div><div><label class="text-sm">WhatsApp number</label><input wire:model="socialWhatsapp" class="mt-1 block w-full rounded-lg border-slate-300"></div></div></section>
+
+        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h3 class="text-lg font-semibold text-slate-900">System preferences</h3><div class="mt-5 space-y-4"><div><label class="text-sm">Timezone</label><input wire:model="timezone" class="mt-1 block w-full rounded-lg border-slate-300">@error('timezone')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror</div><div><label class="text-sm">Week starts on</label><select wire:model="weekStartsOn" class="w-full rounded-lg border-slate-300"><option value="monday">Monday</option><option value="sunday">Sunday</option></select></div><label class="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-3 text-sm"><input wire:model="notificationsEnabled" type="checkbox" class="rounded border-slate-300 text-blue-700">Enable LMS notifications</label><label class="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-3 text-sm"><input wire:model="lateSubmissionsEnabled" type="checkbox" class="rounded border-slate-300 text-blue-700">Allow late-submission workflows</label></div></section>
+        <div class="flex justify-end lg:col-span-2"><x-button type="submit" variant="primary" icon="save" target="save" :loading="true">Save changes</x-button></div>
+    </form>
+
+    <section class="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm lg:flex lg:items-center lg:justify-between lg:gap-8"><div><h3 class="text-lg font-semibold text-amber-950">Data maintenance</h3><p class="mt-1 text-sm text-amber-900">Download a JSON backup of the LMS data, or reset demo data while preserving super administrator accounts.</p></div><div class="mt-4 flex flex-wrap gap-3 lg:mt-0"><x-button type="button" variant="secondary" icon="save" target="backupDatabase" :loading="true" wire:click="backupDatabase">Download backup</x-button>@if(auth()->user()->hasRole('super_admin'))<x-button type="button" variant="danger" icon="trash" target="resetDatabase" :loading="true" wire:click="resetDatabase" onclick="return confirm('This permanently removes all school data and non-super-admin users. Continue?')">Reset database</x-button>@endif</div></section>
 </div>

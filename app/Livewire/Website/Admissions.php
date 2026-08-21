@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Website;
 
+use App\Models\WebsitePage;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -10,6 +11,6 @@ class Admissions extends Component
 {
     public function render()
     {
-        return view('livewire.website.admissions');
+        return view('livewire.website.admissions', ['page' => WebsitePage::where('slug', 'admissions')->first()]);
     }
 }

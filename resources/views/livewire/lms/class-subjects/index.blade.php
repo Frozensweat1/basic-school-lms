@@ -49,6 +49,7 @@
         </div>
     </div>
 
+<x-pagination :paginator="$classSubjects" />
     <x-modal :show="$showFormModal" :title="$editingId ? 'Edit class subject' : 'Allocate subject'" close-action="closeModals">
         <form wire:submit="save" class="space-y-5">
             <div>

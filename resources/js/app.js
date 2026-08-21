@@ -1,6 +1,10 @@
 import './bootstrap';
 import Quill from 'quill';
+import Swal from 'sweetalert2';
 import 'quill/dist/quill.snow.css';
+import 'sweetalert2/dist/sweetalert2.min.css';
+
+window.Swal = Swal;
 
 window.richTextEditor = (value, options = {}) => ({
     value,
@@ -32,7 +36,6 @@ window.richTextEditor = (value, options = {}) => ({
                 this.value = content;
             }
         });
-
     },
 
     setEditorContent(content) {

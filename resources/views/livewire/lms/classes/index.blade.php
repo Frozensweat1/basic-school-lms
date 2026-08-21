@@ -46,6 +46,8 @@
                 No classes configured yet. Add the first class for an academic year.</div>
         @endforelse
     </div>
+    <x-pagination :paginator="$classes" />
+
     @if ($showFormModal)
         <div class="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-slate-950/70 p-4 backdrop-blur-sm"
             style="background-color:rgba(2,6,23,.72)" role="dialog" aria-modal="true">

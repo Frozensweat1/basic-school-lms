@@ -4,7 +4,7 @@
 
 ## Installation & Setup ✅
 
-The package is already installed in the project. SweetAlert2 is configured in `resources/js/app.js`:
+The package is already installed in the project. SweetAlert2 is bundled locally through `resources/js/app.js`; no third-party alert CDN is required.
 
 ```javascript
 import Swal from 'sweetalert2'

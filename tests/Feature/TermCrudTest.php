@@ -24,7 +24,9 @@ class TermCrudTest extends TestCase
         $year = AcademicYear::create(['school_id' => $school->id, 'name' => '2026/2027', 'starts_at' => '2026-09-01', 'ends_at' => '2027-07-31', 'is_active' => true]);
 
         Livewire::actingAs($user)->test(Index::class)
-            ->call('create')->set('academicYearId', (string) $year->id)->set('name', 'Term 1')->set('sequence', '1')
+            ->assertSet('showForm', false)
+            ->call('create')->assertSet('showForm', true)
+            ->set('academicYearId', (string) $year->id)->set('name', 'Term 1')->set('sequence', '1')
             ->set('startsAt', '2026-09-01')->set('endsAt', '2026-12-18')->set('isActive', true)->call('save')->assertHasNoErrors();
 
         $this->assertDatabaseHas('terms', ['academic_year_id' => $year->id, 'name' => 'Term 1', 'is_active' => true]);

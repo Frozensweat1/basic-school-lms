@@ -1,0 +1,4 @@
+<?php
+namespace App\Livewire\LMS\Timetables\Student;
+use App\Models\{Student,TimetableEntry}; use Livewire\Attributes\Layout; use Livewire\Component;
+#[Layout('layouts.lms')] class Index extends Component { public Student $student; public function mount():void{$this->student=auth()->user()->student;abort_unless(auth()->user()->hasRole('student')&&$this->student,403);} public function render(){$classIds=$this->student->enrollments()->where('status','active')->pluck('school_class_id');$entries=TimetableEntry::whereIn('school_class_id',$classIds)->whereHas('timetable',fn($q)=>$q->where('status','published')->whereHas('academicYear',fn($year)=>$year->where('school_id',$this->student->school_id)))->with(['classSubject.subject','teacher','schedulePeriod'])->orderBy('day_of_week')->get()->sortBy(fn($entry)=>[$entry->day_of_week,$entry->schedulePeriod?->sequence??0]);return view('livewire.lms.timetables.student.index',compact('entries'));}}

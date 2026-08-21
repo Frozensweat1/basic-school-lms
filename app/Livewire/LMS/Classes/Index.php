@@ -1,11 +1,12 @@
 <?php
 namespace App\Livewire\LMS\Classes;
-use App\Models\AcademicYear; use App\Models\SchoolClass; use App\Models\Stream; use Illuminate\Foundation\Auth\Access\AuthorizesRequests; use Illuminate\Validation\ValidationException; use Jantinnerezo\LivewireAlert\Facades\LivewireAlert; use Livewire\Attributes\Layout; use Livewire\Component; use Throwable;
+use App\Models\AcademicYear; use App\Models\SchoolClass; use App\Models\Stream; use Illuminate\Foundation\Auth\Access\AuthorizesRequests; use Illuminate\Validation\ValidationException; use Jantinnerezo\LivewireAlert\Facades\LivewireAlert; use Livewire\Attributes\Layout; use Livewire\Component; use Livewire\WithPagination; use Throwable;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
     use AuthorizesRequests;
+    use WithPagination;
     public bool $showFormModal=false,$showDeleteModal=false;
     public ?int $editingId=null,$deletingId=null;
     public string $academicYearId='', $streamId='', $name='', $code='', $status='active';
@@ -24,5 +25,5 @@ class Index extends Component
     public function delete():void{$class=SchoolClass::findOrFail($this->deletingId);$this->authorize('delete',$class);if($class->enrollments()->exists()||$class->classSubjects()->exists()||$class->attendanceRecords()->exists()){$this->addError('delete','Classes with enrolments, subjects, or attendance records cannot be deleted.');LivewireAlert::title('Class cannot be deleted')->warning()->asToast()->position('top-end')->show();return;}try{$class->delete();$this->showDeleteModal=false;$this->deletingId=null;LivewireAlert::title('Class deleted')->success()->asToast()->position('top-end')->show();}catch(Throwable $e){report($e);LivewireAlert::title('Unable to delete class')->error()->asToast()->position('top-end')->show();}}
     public function closeModals():void{$this->showFormModal=false;$this->showDeleteModal=false;$this->resetForm();$this->resetErrorBag();}
     private function resetForm():void{$this->reset(['editingId','deletingId','academicYearId','streamId','name','code','status']);$this->status='active';$this->resetValidation();}
-    public function render(){return view('livewire.lms.classes.index',['classes'=>SchoolClass::with(['academicYear','stream'])->withCount('enrollments')->orderByDesc('academic_year_id')->orderBy('name')->get(),'years'=>AcademicYear::orderByDesc('starts_at')->get(),'streams'=>Stream::where('is_active',true)->orderBy('name')->get()]);}
+    public function render(){return view('livewire.lms.classes.index',['classes'=>SchoolClass::with(['academicYear','stream'])->withCount('enrollments')->orderByDesc('academic_year_id')->orderBy('name')->paginate(15),'years'=>AcademicYear::orderByDesc('starts_at')->get(),'streams'=>Stream::where('is_active',true)->orderBy('name')->get()]);}
 }

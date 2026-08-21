@@ -26,5 +26,6 @@ class DatabaseSeeder extends Seeder
         $user->syncRoles('school_admin');
 
         $this->call(LmsDemoSeeder::class);
+        $this->call(WebsiteContentSeeder::class);
     }
 }
