@@ -47,5 +47,6 @@ class UiComponentTest extends TestCase
         $this->assertStringContainsString('Showing', $html);
         $this->assertStringContainsString('of', $html);
         $this->assertStringContainsString('Next', $html);
+        $this->assertSame(1, substr_count($html, 'Showing'));
     }
 }

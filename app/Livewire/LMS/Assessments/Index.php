@@ -9,12 +9,14 @@ use Illuminate\Validation\{Rule, ValidationException};
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Throwable;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
     use AuthorizesRequests;
+    use WithPagination;
     public bool $showFormModal = false, $showDeleteModal = false;
     public ?int $editingId = null, $deletingId = null;
     public string $classSubjectId = '', $termId = '', $componentId = '', $teacherId = '', $title = '', $maxScore = '100', $assessedAt = '', $status = 'draft';
@@ -43,5 +45,5 @@ class Index extends Component
     public function delete(): void { $assessment = Assessment::findOrFail($this->deletingId); $this->authorize('delete', $assessment); try { $assessment->delete(); $this->showDeleteModal = false; $this->deletingId = null; LivewireAlert::title('Assessment deleted')->success()->asToast()->position('top-end')->show(); } catch (Throwable $exception) { report($exception); LivewireAlert::title('Unable to delete assessment')->error()->asToast()->position('top-end')->show(); } }
     public function closeModals(): void { $this->showFormModal = false; $this->showDeleteModal = false; $this->resetForm(); $this->resetErrorBag(); }
     private function resetForm(): void { $this->reset(['editingId', 'deletingId', 'classSubjectId', 'termId', 'componentId', 'teacherId', 'title', 'maxScore', 'assessedAt', 'status']); $this->maxScore = '100'; $this->status = 'draft'; $this->resetValidation(); }
-    public function render() { $schoolId = (int) School::query()->value('id'); $teacherId = auth()->user()->hasRole('teacher') ? auth()->user()->teacher?->id : null; $classSubjects = ClassSubject::with(['schoolClass', 'subject'])->whereHas('schoolClass.academicYear', fn ($q) => $q->where('school_id', $schoolId))->when($teacherId, fn ($q) => $q->where('teacher_id', $teacherId))->get(); $terms = Term::whereHas('academicYear', fn ($q) => $q->where('school_id', $schoolId))->orderBy('sequence')->get(); return view('livewire.lms.assessments.index', ['assessments' => Assessment::with(['classSubject.schoolClass', 'classSubject.subject', 'term', 'component'])->when($classSubjects->isNotEmpty(), fn ($q) => $q->whereIn('class_subject_id', $classSubjects->pluck('id')))->when($classSubjects->isEmpty(), fn ($q) => $q->whereRaw('1=0'))->latest()->get(), 'classSubjects' => $classSubjects, 'terms' => $terms, 'components' => AssessmentComponent::whereIn('term_id', $terms->pluck('id'))->orderBy('sequence')->get(), 'teachers' => Teacher::where('school_id', $schoolId)->where('status', 'active')->get()]); }
+    public function render() { $schoolId = (int) School::query()->value('id'); $teacherId = auth()->user()->hasRole('teacher') ? auth()->user()->teacher?->id : null; $classSubjects = ClassSubject::with(['schoolClass', 'subject'])->whereHas('schoolClass.academicYear', fn ($q) => $q->where('school_id', $schoolId))->when($teacherId, fn ($q) => $q->where('teacher_id', $teacherId))->get(); $terms = Term::whereHas('academicYear', fn ($q) => $q->where('school_id', $schoolId))->orderBy('sequence')->get(); return view('livewire.lms.assessments.index', ['assessments' => Assessment::with(['classSubject.schoolClass', 'classSubject.subject', 'term', 'component'])->when($classSubjects->isNotEmpty(), fn ($q) => $q->whereIn('class_subject_id', $classSubjects->pluck('id')))->when($classSubjects->isEmpty(), fn ($q) => $q->whereRaw('1=0'))->latest()->paginate(15), 'classSubjects' => $classSubjects, 'terms' => $terms, 'components' => AssessmentComponent::whereIn('term_id', $terms->pluck('id'))->orderBy('sequence')->get(), 'teachers' => Teacher::where('school_id', $schoolId)->where('status', 'active')->get()]); }
 }

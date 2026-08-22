@@ -6,10 +6,13 @@ use App\Models\{Lesson, LessonProgress, LessonResource, Student};
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
+    use WithPagination;
+
     public Student $student;
     public ?int $selectedLessonId = null;
 
@@ -42,7 +45,7 @@ class Index extends Component
 
     public function render()
     {
-        $lessons = $this->lessons()->with(['topic.classSubject.schoolClass', 'topic.classSubject.subject', 'teacher', 'resources'])->orderBy('sequence')->get();
+        $lessons = $this->lessons()->with(['topic.classSubject.schoolClass', 'topic.classSubject.subject', 'teacher', 'resources'])->orderBy('sequence')->paginate(15);
         $completed = LessonProgress::where('student_id', $this->student->id)->whereIn('lesson_id', $lessons->pluck('id'))->pluck('completed_at', 'lesson_id');
         $selectedLesson = $this->selectedLessonId ? $lessons->firstWhere('id', $this->selectedLessonId) : null;
 

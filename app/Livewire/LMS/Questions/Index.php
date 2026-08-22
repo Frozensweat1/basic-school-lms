@@ -8,12 +8,14 @@ use Illuminate\Validation\{Rule, ValidationException};
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Throwable;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
     use AuthorizesRequests;
+    use WithPagination;
 
     public bool $showFormModal = false, $showDeleteModal = false;
     public ?int $editingId = null, $deletingId = null;
@@ -50,5 +52,5 @@ class Index extends Component
     private function resetForm(): void { $this->reset(['editingId', 'deletingId', 'type', 'prompt', 'maxScore', 'optionsText', 'correctAnswer']); $this->type = 'multiple_choice'; $this->maxScore = '1'; $this->resetValidation(); }
     private function schoolId(): int { return (int) School::query()->value('id'); }
     private function scopedQuestions() { return Question::where('school_id', $this->schoolId()); }
-    public function render() { return view('livewire.lms.questions.index', ['questions' => $this->scopedQuestions()->with('options')->latest()->get()]); }
+    public function render() { return view('livewire.lms.questions.index', ['questions' => $this->scopedQuestions()->with('options')->latest()->paginate(15)]); }
 }

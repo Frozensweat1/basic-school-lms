@@ -11,12 +11,14 @@ use Illuminate\Validation\{Rule, ValidationException};
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Throwable;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
     use AuthorizesRequests;
+    use WithPagination;
 
     public bool $showFormModal = false;
     public bool $showDeleteModal = false;
@@ -181,7 +183,7 @@ class Index extends Component
         return view('livewire.lms.quizzes.index', [
             'quizzes' => Quiz::with(['classSubject.schoolClass', 'classSubject.subject', 'teacher'])
                 ->when($classSubjects->isNotEmpty(), fn ($q) => $q->whereIn('class_subject_id', $classSubjects->pluck('id')))
-                ->when($classSubjects->isEmpty(), fn ($q) => $q->whereRaw('1=0'))->withCount('quizQuestions')->latest()->get(),
+                ->when($classSubjects->isEmpty(), fn ($q) => $q->whereRaw('1=0'))->withCount('quizQuestions')->latest()->paginate(15),
             'classSubjects' => $classSubjects,
             'topics' => $topics,
             'lessons' => Lesson::whereIn('topic_id', $topics->pluck('id'))->orderBy('sequence')->get(),

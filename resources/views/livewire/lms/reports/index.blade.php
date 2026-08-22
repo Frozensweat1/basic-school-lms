@@ -76,4 +76,4 @@
         <x-stat-card label="Average score" :value="number_format((float) ($metrics['averageScore'] ?? 0), 1)" tone="primary" />
         <x-stat-card label="At-risk students" :value="(string) ($metrics['atRisk'] ?? 0)" tone="warning" />
     </div>
-</div>
+<x-pagination :paginator="$reportCards" /></div>

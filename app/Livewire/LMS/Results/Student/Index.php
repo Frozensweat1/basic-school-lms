@@ -6,10 +6,13 @@ use App\Models\Student;
 use App\Models\SubjectResult;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
+    use WithPagination;
+
     public Student $student;
 
     public function mount(): void
@@ -27,7 +30,7 @@ class Index extends Component
                 ->where('status', 'published')
                 ->whereHas('student', fn ($query) => $query->where('school_id', $this->student->school_id))
                 ->latest('term_id')
-                ->get(),
+                ->paginate(15),
         ]);
     }
 }

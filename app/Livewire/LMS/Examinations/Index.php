@@ -8,12 +8,14 @@ use Illuminate\Validation\{Rule, ValidationException};
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Throwable;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
     use AuthorizesRequests;
+    use WithPagination;
 
     public bool $showFormModal = false;
     public ?int $editingId = null;
@@ -64,7 +66,7 @@ class Index extends Component
         $schoolId = (int) School::query()->value('id'); $teacher = auth()->user()->hasRole('teacher') ? auth()->user()->teacher : null;
         $years = AcademicYear::where('school_id', $schoolId)->latest('starts_at')->get();
         $classSubjects = ClassSubject::with(['schoolClass', 'subject'])->whereHas('schoolClass.academicYear', fn ($q) => $q->where('school_id', $schoolId))->when($teacher, fn ($q) => $q->where('teacher_id', $teacher->id))->get();
-        return view('livewire.lms.examinations.index', ['examinations' => Examination::with(['classSubject.subject', 'teacher', 'term'])->where('school_id', $schoolId)->when($teacher, fn ($q) => $q->where('teacher_id', $teacher->id))->latest('exam_date')->get(), 'years' => $years, 'terms' => Term::whereIn('academic_year_id', $years->pluck('id'))->orderBy('sequence')->get(), 'classSubjects' => $classSubjects, 'teachers' => $teacher ? collect([$teacher]) : Teacher::where('school_id', $schoolId)->where('status', 'active')->get()]);
+        return view('livewire.lms.examinations.index', ['examinations' => Examination::with(['classSubject.subject', 'teacher', 'term'])->where('school_id', $schoolId)->when($teacher, fn ($q) => $q->where('teacher_id', $teacher->id))->latest('exam_date')->paginate(15), 'years' => $years, 'terms' => Term::whereIn('academic_year_id', $years->pluck('id'))->orderBy('sequence')->get(), 'classSubjects' => $classSubjects, 'teachers' => $teacher ? collect([$teacher]) : Teacher::where('school_id', $schoolId)->where('status', 'active')->get()]);
     }
 
     private function resetForm(): void { $this->reset(['editingId', 'academicYearId', 'termId', 'classSubjectId', 'teacherId', 'title', 'description', 'examDate', 'durationMinutes', 'maxScore', 'status']); $this->maxScore = '100'; $this->status = 'draft'; $this->resetValidation(); }

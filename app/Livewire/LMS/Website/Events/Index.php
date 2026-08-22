@@ -6,10 +6,13 @@ use Illuminate\Support\Str;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
+    use WithPagination;
+
     public bool $showFormModal = false;
     public ?int $editingId = null;
     public string $title = '', $description = '', $startsAt = '', $endsAt = '', $location = '';
@@ -30,5 +33,5 @@ class Index extends Component
     public function delete(int $id): void { $this->guard(); WebsiteEvent::findOrFail($id)->delete(); LivewireAlert::title('Event deleted')->success()->asToast()->show(); }
     public function closeModal(): void { $this->showFormModal=false; $this->resetForm(); }
     private function resetForm(): void { $this->reset(['editingId','title','description','startsAt','endsAt','location']); $this->isPublished=true; $this->resetValidation(); }
-    public function render() { return view('livewire.lms.website.events.index', ['events'=>WebsiteEvent::latest('starts_at')->get()]); }
+    public function render() { return view('livewire.lms.website.events.index', ['events'=>WebsiteEvent::latest('starts_at')->paginate(15)]); }
 }

@@ -33,6 +33,7 @@ class Index extends Component
 
     public function mount(): void { $this->authorize('viewAny', User::class); }
     public function updatedSearch(): void { $this->resetPage(); }
+    public function clearSearch(): void { $this->search = ''; $this->resetPage(); }
     public function create(): void { $this->authorize('create', User::class); $this->resetForm(); $this->showFormModal = true; }
     public function edit(User $user): void { $this->authorize('update', $user); $this->editingId=$user->id; $this->name=$user->name; $this->email=$user->email; $this->role=$user->roles->first()?->name ?? ''; $this->showFormModal=true; }
 
@@ -69,5 +70,26 @@ class Index extends Component
     public function delete(): void { $user=User::findOrFail($this->deletingId); $this->authorize('delete',$user); try { $user->delete(); $this->showDeleteModal=false; LivewireAlert::title('User deleted')->success()->asToast()->show(); } catch(Throwable $e){report($e);LivewireAlert::title('Unable to delete user')->error()->asToast()->show();} }
     public function closeModals(): void { $this->showFormModal=false;$this->showDeleteModal=false;$this->resetForm();$this->resetErrorBag(); }
     private function resetForm(): void { $this->reset(['editingId','deletingId','name','email','password','role']);$this->resetValidation(); }
-    public function render() { return view('livewire.lms.users.index',['users'=>User::with('roles')->where(fn($q)=>$q->where('name','like',"%{$this->search}%")->orWhere('email','like',"%{$this->search}%"))->when(auth()->user()->hasRole('school_admin'),fn($q)=>$q->whereDoesntHave('roles',fn($roles)=>$roles->where('name','super_admin')))->latest()->paginate(25),'roles'=>Role::when(auth()->user()->hasRole('school_admin'),fn($q)=>$q->where('name','!=','super_admin'))->orderBy('name')->get()]); }
+    public function render()
+    {
+        $search = trim($this->search);
+
+        return view('livewire.lms.users.index', [
+            'users' => User::query()
+                ->with('roles')
+                ->when($search !== '', function ($query) use ($search): void {
+                    $query->where(function ($users) use ($search): void {
+                        $users->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhereHas('roles', fn ($roles) => $roles->where('name', 'like', "%{$search}%"));
+                    });
+                })
+                ->when(auth()->user()->hasRole('school_admin'), fn ($query) => $query->whereDoesntHave('roles', fn ($roles) => $roles->where('name', 'super_admin')))
+                ->latest()
+                ->paginate(25),
+            'roles' => Role::when(auth()->user()->hasRole('school_admin'), fn ($query) => $query->where('name', '!=', 'super_admin'))
+                ->orderBy('name')
+                ->get(),
+        ]);
+    }
 }

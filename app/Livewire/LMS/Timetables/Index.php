@@ -11,12 +11,14 @@ use Illuminate\Validation\{Rule, ValidationException};
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Throwable;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
     use AuthorizesRequests;
+    use WithPagination;
     public bool $showFormModal = false, $showDeleteModal = false, $showGenerateModal = false;
     public ?int $editingId = null, $deletingId = null, $generatingId = null;
     public string $academicYearId = '', $termId = '', $name = '', $status = 'draft';
@@ -65,7 +67,7 @@ class Index extends Component
 
     public function render()
     {
-        $years = AcademicYear::where('school_id', $this->schoolId())->orderByDesc('starts_at')->get(); return view('livewire.lms.timetables.index', ['timetables' => Timetable::with(['academicYear', 'term'])->whereIn('academic_year_id', $years->pluck('id'))->latest()->get(), 'years' => $years, 'terms' => Term::whereIn('academic_year_id', $years->pluck('id'))->orderBy('sequence')->get()]);
+        $years = AcademicYear::where('school_id', $this->schoolId())->orderByDesc('starts_at')->get(); return view('livewire.lms.timetables.index', ['timetables' => Timetable::with(['academicYear', 'term'])->whereIn('academic_year_id', $years->pluck('id'))->latest()->paginate(15), 'years' => $years, 'terms' => Term::whereIn('academic_year_id', $years->pluck('id'))->orderBy('sequence')->get()]);
     }
 
     private function schoolId(): int { return (int) School::query()->value('id'); }

@@ -4,6 +4,7 @@ namespace App\Livewire\LMS\Assignments\Concerns;
 
 use App\Support\ContentSanitizer;
 use App\Models\Assignment;
+use App\Models\AssignmentAttachment;
 use App\Models\ClassSubject;
 use App\Models\Lesson;
 use App\Models\School;
@@ -13,20 +14,29 @@ use App\Support\LmsNotifier;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Component;
+use Livewire\WithFileUploads;
+use Livewire\WithPagination;
 use Throwable;
 
 abstract class ManagesAssignments extends Component
 {
     use AuthorizesRequests;
+    use WithFileUploads;
+    use WithPagination;
 
     public bool $showFormModal = false;
     public bool $showDeleteModal = false;
     public ?int $editingId = null;
     public ?int $deletingId = null;
+    public string $search = '';
+    public string $filterClassSubjectId = '';
+    public string $filterStatus = '';
+    public string $filterDueState = '';
     public string $classSubjectId = '';
     public string $topicId = '';
     public string $lessonId = '';
@@ -38,6 +48,7 @@ abstract class ManagesAssignments extends Component
     public string $dueAt = '';
     public string $status = 'draft';
     public bool $allowLateSubmission = false;
+    public array $attachmentFiles = [];
 
     abstract protected function classSubjects(): Builder;
 
@@ -50,6 +61,32 @@ abstract class ManagesAssignments extends Component
         $this->authorize('create', Assignment::class);
         $this->resetForm();
         $this->showFormModal = true;
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterClassSubjectId(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterStatus(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterDueState(): void
+    {
+        $this->resetPage();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset(['search', 'filterClassSubjectId', 'filterStatus', 'filterDueState']);
+        $this->resetPage();
     }
 
     public function edit(Assignment $assignment): void
@@ -69,6 +106,7 @@ abstract class ManagesAssignments extends Component
         $this->dueAt = $assignment->due_at->format('Y-m-d\TH:i');
         $this->allowLateSubmission = $assignment->allow_late_submission;
         $this->status = $assignment->status;
+        $this->resetValidation();
         $this->showFormModal = true;
     }
 
@@ -94,6 +132,8 @@ abstract class ManagesAssignments extends Component
                 'dueAt' => ['required', 'date', 'after:opensAt'],
                 'status' => ['required', Rule::in(['draft', 'published', 'closed'])],
                 'allowLateSubmission' => ['boolean'],
+                'attachmentFiles' => ['array'],
+                'attachmentFiles.*' => ['file', 'max:10240', 'mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png,zip'],
             ]);
 
             $classSubject = $this->managedClassSubject((int) $data['classSubjectId']);
@@ -124,6 +164,18 @@ abstract class ManagesAssignments extends Component
                 ],
             );
 
+            foreach ($data['attachmentFiles'] ?? [] as $file) {
+                $path = $file->store('assignments/attachments/'.$savedAssignment->id, 'local');
+
+                AssignmentAttachment::create([
+                    'assignment_id' => $savedAssignment->id,
+                    'name' => $file->getClientOriginalName(),
+                    'disk' => 'local',
+                    'path' => $path,
+                    'size' => $file->getSize(),
+                ]);
+            }
+
             if ($savedAssignment->status === 'published' && ! $wasPublished) {
                 LmsNotifier::send(
                     LmsNotifier::classAudience($classSubject->schoolClass),
@@ -136,6 +188,7 @@ abstract class ManagesAssignments extends Component
 
             $this->showFormModal = false;
             $this->resetForm();
+            $this->resetPage();
             LivewireAlert::title($assignment ? 'Assignment updated' : 'Assignment created')->success()->asToast()->position('top-end')->show();
         } catch (ValidationException $exception) {
             LivewireAlert::title('Check the form')->error()->asToast()->position('top-end')->show();
@@ -164,6 +217,7 @@ abstract class ManagesAssignments extends Component
             $assignment->delete();
             $this->showDeleteModal = false;
             $this->deletingId = null;
+            $this->resetPage();
             LivewireAlert::title('Assignment archived')->success()->asToast()->position('top-end')->show();
         } catch (Throwable $exception) {
             report($exception);
@@ -179,21 +233,59 @@ abstract class ManagesAssignments extends Component
         $this->resetErrorBag();
     }
 
+    public function downloadAttachment(int $attachmentId)
+    {
+        $attachment = AssignmentAttachment::with('assignment')
+            ->whereKey($attachmentId)
+            ->firstOrFail();
+
+        $this->authorize('view', $attachment->assignment);
+        $this->managedClassSubject($attachment->assignment->class_subject_id);
+
+        return Storage::disk($attachment->disk)->download($attachment->path, $attachment->name);
+    }
+
     public function render()
     {
         $classSubjects = $this->classSubjects()->get();
-        $topics = Topic::whereIn('class_subject_id', $classSubjects->pluck('id'))->orderBy('sequence')->get();
+        $classSubjectIds = $classSubjects->pluck('id');
+        $topics = Topic::whereIn('class_subject_id', $classSubjectIds)->orderBy('sequence')->get();
+        $search = trim($this->search);
 
         return view($this->componentView(), [
-            'assignments' => Assignment::with(['classSubject.schoolClass', 'classSubject.subject', 'topic', 'lesson', 'teacher'])
-                ->whereIn('class_subject_id', $classSubjects->pluck('id'))
-                ->withCount('submissions')
+            'assignments' => Assignment::query()
+                ->with(['classSubject.schoolClass', 'classSubject.subject', 'topic', 'lesson', 'teacher'])
+                ->whereIn('class_subject_id', $classSubjectIds)
+                ->withCount(['submissions', 'attachments'])
+                ->when($search !== '', function ($query) use ($search): void {
+                    $query->where(function ($assignments) use ($search): void {
+                        $assignments->where('title', 'like', "%{$search}%")
+                            ->orWhere('instructions', 'like', "%{$search}%")
+                            ->orWhereHas('topic', fn ($topics) => $topics->where('title', 'like', "%{$search}%"))
+                            ->orWhereHas('lesson', fn ($lessons) => $lessons->where('title', 'like', "%{$search}%"))
+                            ->orWhereHas('classSubject.subject', fn ($subjects) => $subjects->where('name', 'like', "%{$search}%"))
+                            ->orWhereHas('classSubject.schoolClass', fn ($classes) => $classes->where('name', 'like', "%{$search}%"))
+                            ->orWhereHas('teacher', function ($teachers) use ($search): void {
+                                $teachers->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%")
+                                    ->orWhere('employee_id', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when(filled($this->filterClassSubjectId), fn ($query) => $query->where('class_subject_id', $this->filterClassSubjectId))
+                ->when(filled($this->filterStatus), fn ($query) => $query->where('status', $this->filterStatus))
+                ->when($this->filterDueState === 'upcoming', fn ($query) => $query->whereNotNull('opens_at')->where('opens_at', '>', now()))
+                ->when($this->filterDueState === 'open', fn ($query) => $query->where(fn ($assignments) => $assignments->whereNull('opens_at')->orWhere('opens_at', '<=', now()))->where('due_at', '>=', now()))
+                ->when($this->filterDueState === 'overdue', fn ($query) => $query->where('due_at', '<', now()))
                 ->latest()
-                ->get(),
+                ->paginate(15),
             'classSubjects' => $classSubjects,
             'topics' => $topics,
             'lessons' => Lesson::whereIn('topic_id', $topics->pluck('id'))->orderBy('sequence')->get(),
             'teachers' => Teacher::where('school_id', $this->schoolId())->where('status', 'active')->orderBy('last_name')->get(),
+            'assignmentAttachments' => $this->editingId
+                ? AssignmentAttachment::where('assignment_id', $this->editingId)->latest()->get()
+                : collect(),
         ]);
     }
 
@@ -209,7 +301,7 @@ abstract class ManagesAssignments extends Component
 
     private function resetForm(): void
     {
-        $this->reset(['editingId', 'deletingId', 'classSubjectId', 'topicId', 'lessonId', 'teacherId', 'title', 'instructions', 'maxScore', 'opensAt', 'dueAt', 'status', 'allowLateSubmission']);
+        $this->reset(['editingId', 'deletingId', 'classSubjectId', 'topicId', 'lessonId', 'teacherId', 'title', 'instructions', 'maxScore', 'opensAt', 'dueAt', 'status', 'allowLateSubmission', 'attachmentFiles']);
         $this->maxScore = '100';
         $this->status = 'draft';
         $this->resetValidation();

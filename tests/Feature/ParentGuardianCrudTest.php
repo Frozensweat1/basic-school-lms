@@ -58,4 +58,48 @@ class ParentGuardianCrudTest extends TestCase
             'relationship' => 'Mother',
         ]);
     }
+
+    public function test_school_admin_can_search_guardians_by_contact_or_linked_student(): void
+    {
+        Role::create(['name' => 'school_admin']);
+        $user = User::factory()->create();
+        $user->assignRole('school_admin');
+        $school = School::create(['name' => 'BrightStar Academy', 'code' => 'BSA']);
+        $student = Student::create([
+            'school_id' => $school->id,
+            'student_id' => 'STU-100',
+            'admission_number' => 'ADM-100',
+            'first_name' => 'Nana',
+            'last_name' => 'Ofori',
+            'date_of_birth' => '2015-05-10',
+            'gender' => 'male',
+            'admission_date' => '2026-01-12',
+        ]);
+        $firstParent = ParentGuardian::create([
+            'school_id' => $school->id,
+            'first_name' => 'Akosua',
+            'last_name' => 'Asiedu',
+            'email' => 'akosua@example.test',
+        ]);
+        $firstParent->students()->attach($student->id, ['relationship' => 'Mother', 'is_primary_contact' => true]);
+        ParentGuardian::create([
+            'school_id' => $school->id,
+            'first_name' => 'Kwame',
+            'last_name' => 'Yeboah',
+            'phone' => '0200000000',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(Index::class)
+            ->set('search', 'Nana')
+            ->assertSee('Akosua')
+            ->assertDontSee('Kwame')
+            ->set('search', '0200000000')
+            ->assertSee('Kwame')
+            ->assertDontSee('Akosua')
+            ->call('clearSearch')
+            ->assertSet('search', '')
+            ->assertSee('Akosua')
+            ->assertSee('Kwame');
+    }
 }

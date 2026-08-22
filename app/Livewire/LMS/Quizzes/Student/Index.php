@@ -6,10 +6,13 @@ use App\Models\{Quiz, QuizAttempt, Student};
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
+    use WithPagination;
+
     public Student $student;
 
     public function mount(): void
@@ -36,7 +39,7 @@ class Index extends Component
 
     public function render()
     {
-        $quizzes = $this->quizzes()->with('classSubject.subject')->get()->map(function ($quiz) {
+        $quizzes = $this->quizzes()->with('classSubject.subject')->paginate(15)->through(function ($quiz) {
             $quiz->attempt = $quiz->attempts()->where('student_id', $this->student->id)->latest('attempt_number')->first();
             $quiz->attemptCount = $quiz->attempts()->where('student_id', $this->student->id)->count();
             return $quiz;

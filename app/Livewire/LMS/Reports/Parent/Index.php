@@ -6,10 +6,13 @@ use App\Models\ParentGuardian;
 use App\Models\ReportCard;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
+    use WithPagination;
+
     public ParentGuardian $parent;
     public string $studentId = '';
 
@@ -22,6 +25,7 @@ class Index extends Component
 
     public function updatedStudentId(): void
     {
+        $this->resetPage();
         abort_unless($this->studentId === '' || $this->activeStudents()->whereKey((int) $this->studentId)->exists(), 403);
     }
 
@@ -35,7 +39,7 @@ class Index extends Component
             ->whereHas('student', fn ($query) => $query->where('school_id', $this->parent->school_id))
             ->when($studentId, fn ($query) => $query->where('student_id', $studentId))
             ->latest('published_at')
-            ->get();
+            ->paginate(15);
 
         return view('livewire.lms.reports.parent.index', compact('students', 'reports'));
     }

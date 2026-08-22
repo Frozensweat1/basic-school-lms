@@ -27,4 +27,4 @@
             <div class="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-500">No published report cards for this ward.</div>
         @endforelse
     </div>
-</div>
+<x-pagination :paginator="$reports" /></div>

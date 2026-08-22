@@ -183,7 +183,9 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('can:viewAny,App\\Models\\Assignment')
         ->name('lms.assignments.teacher.index');
     Route::get('/lms/teacher/assignments/{assignment}/grade', TeacherAssignmentGrade::class)
-        ->middleware('can:update,assignment')->name('lms.assignments.teacher.grade');
+        ->middleware('can:view,assignment')->name('lms.assignments.teacher.grade');
+    Route::get('/lms/assignments/{assignment}/submissions', TeacherAssignmentGrade::class)
+        ->middleware('can:view,assignment')->name('lms.assignments.submissions');
     Route::get('/lms/student/assignments', StudentAssignmentsIndex::class)->name('lms.assignments.student.index');
     Route::get('/lms/parent/assignments', ParentAssignmentsIndex::class)->name('lms.assignments.parent.index');
     

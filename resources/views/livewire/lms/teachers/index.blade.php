@@ -9,6 +9,54 @@
             <x-button wire:click="create" target="create" :loading="true" icon="plus">Add teacher</x-button>
         @endcan
     </div>
+
+    @php
+        $filtersActive = filled($search) || filled($filterStatus) || filled($filterAssignment);
+    @endphp
+    <div class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+        <div class="grid w-full gap-3 sm:grid-cols-2 lg:max-w-4xl lg:grid-cols-[minmax(16rem,1fr)_10rem_11rem]">
+            <div class="relative sm:col-span-2 lg:col-span-1">
+                <label for="teacher-search" class="sr-only">Search teachers</label>
+                <svg class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <path d="m20 20-3.5-3.5"></path>
+                </svg>
+                <input
+                    id="teacher-search"
+                    type="search"
+                    wire:model.live.debounce.300ms="search"
+                    placeholder="Search name, employee ID, email, or phone"
+                    autocomplete="off"
+                    class="w-full rounded-xl border-slate-300 py-2.5 pl-10 pr-20 text-sm shadow-sm transition focus:border-blue-700 focus:ring-blue-700"
+                >
+                <span wire:loading wire:target="search" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-500">Searching…</span>
+            </div>
+
+            <select wire:model.live="filterStatus" aria-label="Filter by teacher status" class="rounded-xl border-slate-300 text-sm shadow-sm focus:border-blue-700 focus:ring-blue-700">
+                <option value="">All statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="retired">Retired</option>
+            </select>
+
+            <select wire:model.live="filterAssignment" aria-label="Filter by assignment status" class="rounded-xl border-slate-300 text-sm shadow-sm focus:border-blue-700 focus:ring-blue-700">
+                <option value="">All assignment states</option>
+                <option value="assigned">Assigned</option>
+                <option value="unassigned">Unassigned</option>
+            </select>
+        </div>
+
+        <div class="flex shrink-0 items-center gap-3">
+            @if ($filtersActive)
+                <x-button wire:click="clearFilters" variant="ghost" size="sm" target="clearFilters" :loading="true">Clear filters</x-button>
+            @endif
+            <p class="whitespace-nowrap text-sm text-slate-500" aria-live="polite">
+                <span wire:loading.remove wire:target="search,filterStatus,filterAssignment">{{ $teachers->total() }} {{ \Illuminate\Support\Str::plural('teacher', $teachers->total()) }}</span>
+                <span wire:loading wire:target="search,filterStatus,filterAssignment">Updating…</span>
+            </p>
+        </div>
+    </div>
+
     <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
@@ -50,8 +98,10 @@
                                 </div>
                             </td>
                     </tr>@empty<tr>
-                            <td colspan="6" class="px-5 py-12 text-center text-slate-500">No teachers added yet. Add
-                                the first teacher profile.</td>
+                            <td colspan="6" class="px-5 py-12 text-center">
+                                <p class="font-medium text-slate-700">{{ $filtersActive ? 'No teachers match the current search or filters.' : 'No teachers added yet.' }}</p>
+                                <p class="mt-1 text-sm text-slate-500">{{ $filtersActive ? 'Clear a filter or try another search term.' : 'Add the first teacher profile to get started.' }}</p>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>

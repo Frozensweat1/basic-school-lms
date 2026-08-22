@@ -2,7 +2,7 @@
 
 namespace App\Livewire\LMS\Assignments\Student;
 
-use App\Models\{Assignment, AssignmentSubmission, Student, SubmissionAttachment};
+use App\Models\{Assignment, AssignmentAttachment, AssignmentSubmission, Student, SubmissionAttachment};
 use App\Support\LmsNotifier;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -10,12 +10,14 @@ use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Livewire\WithPagination;
 use Throwable;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
     use WithFileUploads;
+    use WithPagination;
     public Student $student;
     public array $submissionTexts = [];
     public array $submissionFiles = [];
@@ -40,7 +42,7 @@ class Index extends Component
                 [$assignment->teacher?->user],
                 'Assignment submitted',
                 $this->student->first_name.' '.$this->student->last_name.' submitted '.$assignment->title.'.',
-                route('lms.assignments.teacher.grade', $assignment),
+                route('lms.assignments.submissions', $assignment),
                 'assignment',
             );
             unset($this->submissionTexts[$assignmentId], $this->submissionFiles[$assignmentId]);
@@ -50,13 +52,25 @@ class Index extends Component
 
     public function render()
     {
-        $assignments = $this->assignments()->with('classSubject.subject')->latest('due_at')->get()->map(function ($assignment) { $assignment->submission = $assignment->submissions()->with('attachments')->where('student_id', $this->student->id)->first(); return $assignment; });
+        $assignments = $this->assignments()->with(['classSubject.subject', 'attachments'])->latest('due_at')->paginate(15)->through(function ($assignment) {
+            $assignment->submission = $assignment->submissions()->with('attachments')->where('student_id', $this->student->id)->first();
+
+            return $assignment;
+        });
         return view('livewire.lms.assignments.student.index', compact('assignments'));
     }
 
     public function downloadAttachment(int $attachmentId)
     {
         $attachment = SubmissionAttachment::whereKey($attachmentId)->whereHas('submission', fn ($query) => $query->where('student_id', $this->student->id))->firstOrFail();
+        return Storage::disk($attachment->disk)->download($attachment->path, $attachment->name);
+    }
+
+    public function downloadAssignmentAttachment(int $attachmentId)
+    {
+        $attachment = AssignmentAttachment::whereKey($attachmentId)->firstOrFail();
+        abort_unless($this->assignments()->whereKey($attachment->assignment_id)->exists(), 404);
+
         return Storage::disk($attachment->disk)->download($attachment->path, $attachment->name);
     }
 

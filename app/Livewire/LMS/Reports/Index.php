@@ -12,18 +12,26 @@ use Illuminate\Support\Facades\DB;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Throwable;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
     use AuthorizesRequests;
+    use WithPagination;
 
     public string $termId = '';
     public string $classId = '';
     public string $studentId = '';
 
     public function mount(): void { $this->authorize('viewAny', ReportCard::class); }
+
+    public function updatedTermId(): void { $this->resetPage(); }
+
+    public function updatedClassId(): void { $this->resetPage(); }
+
+    public function updatedStudentId(): void { $this->resetPage(); }
 
     public function generateSingle(ReportCardGenerator $generator): void
     {
@@ -61,8 +69,31 @@ class Index extends Component
 
     public function render()
     {
-        $reportCardsQuery = $this->scopedReportCards()->with('student')->when($this->termId, fn ($query) => $query->where('term_id', (int) $this->termId))->when($this->classId, fn ($query) => $query->where('school_class_id', (int) $this->classId)); $reportCards = $reportCardsQuery->latest('generated_at')->get(); $scores = $reportCards->pluck('student_id')->isNotEmpty() ? SubjectResult::whereIn('student_id', $reportCards->pluck('student_id'))->where('status', 'published')->when($this->termId, fn ($query) => $query->where('term_id', (int) $this->termId))->when($this->classId, fn ($query) => $query->whereHas('classSubject', fn ($subject) => $subject->where('school_class_id', (int) $this->classId))) : collect();
-        return view('livewire.lms.reports.index', ['terms' => $this->scopedTerms()->orderBy('sequence')->get(), 'classes' => $this->scopedClasses()->orderBy('name')->get(), 'students' => $this->scopedStudents()->where('status', 'active')->orderBy('last_name')->get(), 'reportCards' => $reportCards, 'metrics' => ['attendance' => round((float) ($reportCards->avg('attendance_percentage') ?? 0), 1), 'averageScore' => round((float) ($scores->avg('total_score') ?? 0), 1), 'atRisk' => $scores->where('total_score', '<', 50)->pluck('student_id')->unique()->count()]]);
+        $reportCardsQuery = $this->scopedReportCards()
+            ->with('student')
+            ->when($this->termId, fn ($query) => $query->where('term_id', (int) $this->termId))
+            ->when($this->classId, fn ($query) => $query->where('school_class_id', (int) $this->classId));
+
+        $reportStudentIds = (clone $reportCardsQuery)->pluck('student_id');
+        $scores = $reportStudentIds->isNotEmpty()
+            ? SubjectResult::whereIn('student_id', $reportStudentIds)
+                ->where('status', 'published')
+                ->when($this->termId, fn ($query) => $query->where('term_id', (int) $this->termId))
+                ->when($this->classId, fn ($query) => $query->whereHas('classSubject', fn ($subject) => $subject->where('school_class_id', (int) $this->classId)))
+                ->get()
+            : collect();
+
+        return view('livewire.lms.reports.index', [
+            'terms' => $this->scopedTerms()->orderBy('sequence')->get(),
+            'classes' => $this->scopedClasses()->orderBy('name')->get(),
+            'students' => $this->scopedStudents()->where('status', 'active')->orderBy('last_name')->get(),
+            'reportCards' => $reportCardsQuery->latest('generated_at')->paginate(15),
+            'metrics' => [
+                'attendance' => round((float) ((clone $reportCardsQuery)->avg('attendance_percentage') ?? 0), 1),
+                'averageScore' => round((float) ($scores->avg('total_score') ?? 0), 1),
+                'atRisk' => $scores->where('total_score', '<', 50)->pluck('student_id')->unique()->count(),
+            ],
+        ]);
     }
 
     private function schoolId(): int { return (int) School::query()->value('id'); }

@@ -6,10 +6,13 @@ use App\Models\{Lesson, LessonProgress, LessonResource, ParentGuardian};
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
+    use WithPagination;
+
     public ParentGuardian $parent;
     public string $studentId = '';
     public ?int $selectedLessonId = null;
@@ -24,6 +27,7 @@ class Index extends Component
     public function updatedStudentId(): void
     {
         $this->selectedLessonId = null;
+        $this->resetPage();
         abort_unless($this->studentId === '' || $this->parent->students()->where('students.status', 'active')->whereKey((int) $this->studentId)->exists(), 403);
     }
 
@@ -45,7 +49,7 @@ class Index extends Component
     {
         $students = $this->parent->students()->where('students.status', 'active')->orderBy('last_name')->get();
         $student = $students->firstWhere('id', (int) $this->studentId);
-        $lessons = $student ? $this->wardLessons()->with(['topic.classSubject.subject', 'resources'])->orderBy('sequence')->get() : collect();
+        $lessons = $student ? $this->wardLessons()->with(['topic.classSubject.subject', 'resources'])->orderBy('sequence')->paginate(15) : Lesson::query()->whereRaw('1 = 0')->paginate(15);
         $completed = $student ? LessonProgress::where('student_id', $student->id)->whereIn('lesson_id', $lessons->pluck('id'))->pluck('completed_at', 'lesson_id') : collect();
         $selectedLesson = $this->selectedLessonId ? $lessons->firstWhere('id', $this->selectedLessonId) : null;
 

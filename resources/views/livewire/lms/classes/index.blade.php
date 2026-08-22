@@ -9,6 +9,48 @@
             <x-button wire:click="create" target="create" :loading="true" icon="plus">Add class</x-button>
         @endcan
     </div>
+
+    <div class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div class="relative w-full sm:max-w-xl">
+            <label for="class-search" class="sr-only">Search classes</label>
+            <svg class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+            </svg>
+            <input
+                id="class-search"
+                type="search"
+                wire:model.live.debounce.300ms="search"
+                placeholder="Search by class, code, stream, or academic year"
+                autocomplete="off"
+                class="w-full rounded-xl border-slate-300 py-2.5 pl-10 pr-24 text-sm shadow-sm transition focus:border-blue-700 focus:ring-blue-700"
+            >
+
+            <span wire:loading wire:target="search" class="absolute right-20 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-500">
+                Searching…
+            </span>
+
+            @if (filled($search))
+                <x-button
+                    type="button"
+                    wire:click="clearSearch"
+                    variant="ghost"
+                    size="sm"
+                    class="absolute right-1.5 top-1/2 -translate-y-1/2 !px-2.5 !py-1.5"
+                    target="clearSearch"
+                    :loading="true"
+                >
+                    Clear
+                </x-button>
+            @endif
+        </div>
+
+        <p class="shrink-0 text-sm text-slate-500" aria-live="polite">
+            <span wire:loading.remove wire:target="search">{{ $classes->total() }} {{ \Illuminate\Support\Str::plural('class', $classes->total()) }}</span>
+            <span wire:loading wire:target="search">Updating results…</span>
+        </p>
+    </div>
+
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         @forelse($classes as $schoolClass)
             <article wire:key="class-{{ $schoolClass->id }}"
@@ -43,7 +85,12 @@
                 </div>
         </article>@empty<div
                 class="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500 md:col-span-2 xl:col-span-3">
-                No classes configured yet. Add the first class for an academic year.</div>
+                @if (filled($search))
+                    No classes match “{{ $search }}”.
+                @else
+                    No classes configured yet. Add the first class for an academic year.
+                @endif
+            </div>
         @endforelse
     </div>
     <x-pagination :paginator="$classes" />

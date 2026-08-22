@@ -5,9 +5,12 @@ namespace Tests\Feature;
 use App\Livewire\LMS\Topics\Admin\Index;
 use App\Models\AcademicYear;
 use App\Models\ClassSubject;
+use App\Models\Lesson;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Subject;
+use App\Models\Teacher;
+use App\Models\Topic;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -32,5 +35,25 @@ class TopicCrudTest extends TestCase
         Livewire::actingAs($user)->test(Index::class)->call('create')->set('classSubjectId', (string) $classSubject->id)->set('title', 'Fractions')->set('sequence', '1')->call('save')->assertHasNoErrors();
 
         $this->assertDatabaseHas('topics', ['class_subject_id' => $classSubject->id, 'title' => 'Fractions', 'sequence' => 1]);
+
+        $teacher = Teacher::create(['school_id' => $school->id, 'employee_id' => 'T-001', 'first_name' => 'Ama', 'last_name' => 'Mensah']);
+        $classSubject->update(['teacher_id' => $teacher->id]);
+        $fractions = Topic::where('title', 'Fractions')->firstOrFail();
+        Lesson::create(['topic_id' => $fractions->id, 'teacher_id' => $teacher->id, 'title' => 'Adding fractions', 'sequence' => 1]);
+        Topic::create(['class_subject_id' => $classSubject->id, 'title' => 'Decimals', 'sequence' => 2]);
+
+        Livewire::actingAs($user)
+            ->test(Index::class)
+            ->set('search', 'Fractions')
+            ->assertSee('Fractions')
+            ->assertDontSee('Decimals')
+            ->set('search', '')
+            ->set('filterLessonState', 'without_lessons')
+            ->assertSee('Decimals')
+            ->assertDontSee('Fractions')
+            ->call('clearFilters')
+            ->assertSet('filterLessonState', '')
+            ->assertSee('Fractions')
+            ->assertSee('Decimals');
     }
 }

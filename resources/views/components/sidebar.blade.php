@@ -185,6 +185,15 @@
                     <span aria-hidden="true">⏰</span>
                     <span class="nav-link-text">Timetables</span>
                 </a>
+                @can('viewAny', App\Models\SchedulePeriod::class)
+                    <a href="{{ route('lms.schedule-periods.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.schedule-periods.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M12 7v5l3 2"></path>
+                        </svg>
+                        <span class="nav-link-text">Schedule Periods</span>
+                    </a>
+                @endcan
                 <a href="{{ route($sidebarRoutes['reports'][$sidebarRole]) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.reports.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">📋</span>
                     <span class="nav-link-text">Reports</span>

@@ -31,7 +31,7 @@ class Feed extends Index
             ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->where(fn ($query) => $query->where('audience', 'school')->orWhere(fn ($class) => $class->where('audience', 'class')->whereIn('school_class_id', $classIds))->orWhere(fn ($subject) => $subject->where('audience', 'subject')->whereIn('subject_id', $subjectIds)))
             ->latest('published_at')
-            ->get();
+            ->paginate(15);
 
         return view('livewire.lms.announcements.feed', compact('announcements'));
     }

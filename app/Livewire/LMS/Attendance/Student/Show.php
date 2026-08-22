@@ -6,10 +6,13 @@ use App\Models\{AttendanceRecord, Student};
 use App\Support\AttendanceSummary;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.lms')]
 class Show extends Component
 {
+    use WithPagination;
+
     public Student $student;
     public string $fromDate = '', $toDate = '';
 
@@ -21,12 +24,12 @@ class Show extends Component
         $this->toDate = now()->toDateString();
     }
 
-    public function updatedFromDate(): void { $this->validateDateRange(); }
-    public function updatedToDate(): void { $this->validateDateRange(); }
+    public function updatedFromDate(): void { $this->resetPage(); $this->validateDateRange(); }
+    public function updatedToDate(): void { $this->resetPage(); $this->validateDateRange(); }
 
     public function render(AttendanceSummary $attendanceSummary)
     {
-        $records = AttendanceRecord::where('student_id', $this->student->id)->whereHas('schoolClass.academicYear', fn ($query) => $query->where('school_id', $this->student->school_id))->when($this->fromDate, fn ($q) => $q->whereDate('attendance_date', '>=', $this->fromDate))->when($this->toDate, fn ($q) => $q->whereDate('attendance_date', '<=', $this->toDate))->with('schoolClass')->latest('attendance_date')->get();
+        $records = AttendanceRecord::where('student_id', $this->student->id)->whereHas('schoolClass.academicYear', fn ($query) => $query->where('school_id', $this->student->school_id))->when($this->fromDate, fn ($q) => $q->whereDate('attendance_date', '>=', $this->fromDate))->when($this->toDate, fn ($q) => $q->whereDate('attendance_date', '<=', $this->toDate))->with('schoolClass')->latest('attendance_date')->paginate(15);
         $summary = $attendanceSummary->forStudent($this->student, $this->fromDate, $this->toDate);
         return view('livewire.lms.attendance.student.show', ['records' => $records, 'percentage' => $summary['percentage'], 'summary' => collect($summary['summary'])]);
     }

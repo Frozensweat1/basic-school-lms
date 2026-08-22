@@ -9,11 +9,14 @@ use Illuminate\Validation\ValidationException;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Throwable;
 
 #[Layout('layouts.lms')]
 class Grade extends Component
 {
+    use WithPagination;
+
     public Quiz $quiz;
     public array $scores = [];
 
@@ -42,6 +45,6 @@ class Grade extends Component
 
     public function render()
     {
-        return view('livewire.lms.quizzes.teacher.grade', ['attempts' => $this->quiz->attempts()->with('student')->whereIn('status', ['submitted', 'completed'])->latest('submitted_at')->get()]);
+        return view('livewire.lms.quizzes.teacher.grade', ['attempts' => $this->quiz->attempts()->with('student')->whereIn('status', ['submitted', 'completed'])->latest('submitted_at')->paginate(15)]);
     }
 }
