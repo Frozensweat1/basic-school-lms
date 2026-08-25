@@ -3,12 +3,10 @@
 namespace App\Livewire\Website;
 
 use App\Models\WebsiteNewsPost;
-use App\Support\SchoolBranding;
-use Livewire\Attributes\Layout;
+use App\Support\PublicWebsiteData;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-#[Layout('layouts.website')]
 class News extends Component
 {
     use WithPagination;
@@ -27,9 +25,16 @@ class News extends Component
 
     public function render()
     {
+        $site = app(PublicWebsiteData::class);
+        $page = $site->page('news');
         $posts = WebsiteNewsPost::query()->published()->latest('published_at')->paginate(9);
         $selected = $this->selectedId ? WebsiteNewsPost::query()->published()->find($this->selectedId) : null;
 
-        return view('livewire.website.news', ['posts' => $posts, 'selected' => $selected]);
+        return view('livewire.website.news', [
+            'branding' => $site->branding(),
+            'page' => $page,
+            'posts' => $posts,
+            'selected' => $selected,
+        ])->layout('layouts.website', $site->metadata('News', $page, route('website.news')));
     }
 }

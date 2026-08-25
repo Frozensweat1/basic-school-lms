@@ -4,13 +4,33 @@ namespace App\Services\Reports;
 
 use App\Models\AttendanceRecord;
 use App\Models\ReportCard;
+use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\Term;
+use Illuminate\Validation\ValidationException;
 
 class ReportCardGenerator
 {
     public function generate(Student $student, Term $term, int $schoolClassId): ReportCard
     {
+        $term->loadMissing('academicYear');
+        $schoolClass = SchoolClass::query()
+            ->whereKey($schoolClassId)
+            ->where('academic_year_id', $term->academic_year_id)
+            ->first();
+
+        if (! $schoolClass || (int) $student->school_id !== (int) $term->academicYear?->school_id) {
+            throw ValidationException::withMessages(['generationClassId' => 'The student, class, and term must belong to the same school and academic year.']);
+        }
+
+        $isEnrolled = $schoolClass->enrollments()
+            ->where('student_id', $student->id)
+            ->where('status', 'active')
+            ->exists();
+        if (! $isEnrolled) {
+            throw ValidationException::withMessages(['generationStudentId' => 'The student is not actively enrolled in the selected class.']);
+        }
+
         $records = AttendanceRecord::where('student_id', $student->id)
             ->where('term_id', $term->id)
             ->where('school_class_id', $schoolClassId)
@@ -24,9 +44,11 @@ class ReportCardGenerator
             ['student_id' => $student->id, 'term_id' => $term->id],
             [
                 'academic_year_id' => $term->academic_year_id,
-                'school_class_id' => $schoolClassId,
+                'school_class_id' => $schoolClass->id,
                 'attendance_percentage' => $attendance,
                 'status' => 'draft',
+                'published_at' => null,
+                'pdf_path' => null,
                 'generated_at' => now(),
             ],
         );

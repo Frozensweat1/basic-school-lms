@@ -25,6 +25,10 @@ class Index extends Component
     public bool $randomizeQuestions = false;
     public ?int $editingId = null;
     public ?int $deletingId = null;
+    public string $search = '';
+    public string $filterClassSubjectId = '';
+    public string $filterStatus = '';
+    public string $filterSchedule = '';
     public string $classSubjectId = '';
     public string $topicId = '';
     public string $lessonId = '';
@@ -50,6 +54,32 @@ class Index extends Component
         $this->showFormModal = true;
     }
 
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterClassSubjectId(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterStatus(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterSchedule(): void
+    {
+        $this->resetPage();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset(['search', 'filterClassSubjectId', 'filterStatus', 'filterSchedule']);
+        $this->resetPage();
+    }
+
     public function edit(Quiz $quiz): void
     {
         $this->authorize('update', $quiz);
@@ -67,6 +97,7 @@ class Index extends Component
         $this->opensAt = $quiz->opens_at?->format('Y-m-d\TH:i') ?? '';
         $this->closesAt = $quiz->closes_at?->format('Y-m-d\TH:i') ?? '';
         $this->status = $quiz->status;
+        $this->resetValidation();
         $this->showFormModal = true;
     }
 
@@ -131,6 +162,7 @@ class Index extends Component
 
             $this->showFormModal = false;
             $this->resetForm();
+            $this->resetPage();
             LivewireAlert::title($quiz ? 'Quiz updated' : 'Quiz created')->success()->asToast()->position('top-end')->show();
         } catch (ValidationException $e) {
             LivewireAlert::title('Check the form')->error()->asToast()->position('top-end')->show();
@@ -156,6 +188,7 @@ class Index extends Component
             $quiz->delete();
             $this->showDeleteModal = false;
             $this->deletingId = null;
+            $this->resetPage();
             LivewireAlert::title('Quiz archived')->success()->asToast()->position('top-end')->show();
         } catch (Throwable $e) {
             report($e);
@@ -178,12 +211,37 @@ class Index extends Component
         $classSubjects = ClassSubject::with(['schoolClass', 'subject'])
             ->whereHas('schoolClass.academicYear', fn ($q) => $q->where('school_id', $schoolId))
             ->when($teacherId, fn ($q) => $q->where('teacher_id', $teacherId))->get();
-        $topics = Topic::whereIn('class_subject_id', $classSubjects->pluck('id'))->orderBy('sequence')->get();
+        $classSubjectIds = $classSubjects->pluck('id');
+        $topics = Topic::whereIn('class_subject_id', $classSubjectIds)->orderBy('sequence')->get();
+        $search = trim($this->search);
 
         return view('livewire.lms.quizzes.index', [
-            'quizzes' => Quiz::with(['classSubject.schoolClass', 'classSubject.subject', 'teacher'])
-                ->when($classSubjects->isNotEmpty(), fn ($q) => $q->whereIn('class_subject_id', $classSubjects->pluck('id')))
-                ->when($classSubjects->isEmpty(), fn ($q) => $q->whereRaw('1=0'))->withCount('quizQuestions')->latest()->paginate(15),
+            'quizzes' => Quiz::query()
+                ->with(['classSubject.schoolClass', 'classSubject.subject', 'topic', 'teacher'])
+                ->whereIn('class_subject_id', $classSubjectIds)
+                ->withCount('quizQuestions')
+                ->when($search !== '', function ($query) use ($search): void {
+                    $query->where(function ($quizzes) use ($search): void {
+                        $quizzes->where('title', 'like', "%{$search}%")
+                            ->orWhere('instructions', 'like', "%{$search}%")
+                            ->orWhereHas('topic', fn ($topics) => $topics->where('title', 'like', "%{$search}%"))
+                            ->orWhereHas('lesson', fn ($lessons) => $lessons->where('title', 'like', "%{$search}%"))
+                            ->orWhereHas('classSubject.subject', fn ($subjects) => $subjects->where('name', 'like', "%{$search}%"))
+                            ->orWhereHas('classSubject.schoolClass', fn ($classes) => $classes->where('name', 'like', "%{$search}%"))
+                            ->orWhereHas('teacher', function ($teachers) use ($search): void {
+                                $teachers->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%")
+                                    ->orWhere('employee_id', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->when(filled($this->filterClassSubjectId), fn ($query) => $query->where('class_subject_id', $this->filterClassSubjectId))
+                ->when(filled($this->filterStatus), fn ($query) => $query->where('status', $this->filterStatus))
+                ->when($this->filterSchedule === 'upcoming', fn ($query) => $query->whereNotNull('opens_at')->where('opens_at', '>', now()))
+                ->when($this->filterSchedule === 'open', fn ($query) => $query->where(fn ($quizzes) => $quizzes->whereNull('opens_at')->orWhere('opens_at', '<=', now()))->where(fn ($quizzes) => $quizzes->whereNull('closes_at')->orWhere('closes_at', '>=', now())))
+                ->when($this->filterSchedule === 'closed', fn ($query) => $query->where(fn ($quizzes) => $quizzes->where('status', 'closed')->orWhere('closes_at', '<', now())))
+                ->latest()
+                ->paginate(15),
             'classSubjects' => $classSubjects,
             'topics' => $topics,
             'lessons' => Lesson::whereIn('topic_id', $topics->pluck('id'))->orderBy('sequence')->get(),

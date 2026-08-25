@@ -103,7 +103,10 @@ class LmsDemoSeeder extends Seeder
 
         $quiz = Quiz::firstOrCreate(['class_subject_id' => $classSubject->id, 'title' => 'Fractions quiz'], ['topic_id' => $topic->id, 'lesson_id' => $lesson->id, 'teacher_id' => $teacher->id, 'instructions' => '<p>Answer each question carefully.</p>', 'time_limit_minutes' => 20, 'pass_mark' => 50, 'max_attempts' => 2, 'randomize_questions' => true, 'opens_at' => '2026-09-18 08:00:00', 'closes_at' => '2026-09-20 17:00:00', 'status' => 'published']);
 
-        $question = Question::firstOrCreate(['school_id' => $school->id, 'prompt' => 'What is one half of ten?'], ['created_by' => $teacherUser->id, 'type' => 'multiple_choice', 'grading_key' => ['answer' => '5'], 'max_score' => 1]);
+        $question = Question::firstOrCreate(
+            ['school_id' => $school->id, 'subject_id' => $subject->id, 'topic_id' => $topic->id, 'lesson_id' => $lesson->id, 'prompt' => 'What is one half of ten?'],
+            ['created_by' => $teacherUser->id, 'type' => 'multiple_choice', 'grading_key' => ['answer' => '5'], 'max_score' => 1],
+        );
         $question->options()->updateOrCreate(['label' => '4'], ['is_correct' => false, 'sequence' => 1]);
         $question->options()->updateOrCreate(['label' => '5'], ['is_correct' => true, 'sequence' => 2]);
         $quiz->quizQuestions()->firstOrCreate(['question_id' => $question->id], ['sequence' => 1]);
@@ -154,18 +157,6 @@ class LmsDemoSeeder extends Seeder
             }
         }
 
-        $questions = collect();
-        foreach (range(1, 10) as $number) {
-            $question = Question::firstOrCreate(
-                ['school_id' => $school->id, 'prompt' => "Demo question {$number}: which number comes after {$number}?"],
-                ['created_by' => $author->id, 'type' => 'multiple_choice', 'grading_key' => ['answer' => (string) ($number + 1)], 'max_score' => 1]
-            );
-            foreach ([$number, $number + 1, $number + 2] as $optionIndex => $option) {
-                $question->options()->firstOrCreate(['label' => (string) $option], ['is_correct' => $option === $number + 1, 'sequence' => $optionIndex + 1]);
-            }
-            $questions->push($question);
-        }
-
         foreach ($classSubjects->take(10) as $index => $classSubject) {
             $teacherId = $classSubject->teacher_id ?: $teachers[$index % $teachers->count()]->id;
             foreach (range(1, 2) as $lessonNumber) {
@@ -196,6 +187,23 @@ class LmsDemoSeeder extends Seeder
                     ['class_subject_id' => $classSubject->id, 'title' => "Unit {$lessonNumber} quiz"],
                     ['topic_id' => $topic->id, 'lesson_id' => $lesson->id, 'teacher_id' => $teacherId, 'instructions' => '<p>Answer all questions.</p>', 'time_limit_minutes' => 20, 'pass_mark' => 50, 'max_attempts' => 2, 'randomize_questions' => true, 'opens_at' => now()->subDays(5), 'closes_at' => now()->addDays(20), 'status' => 'published']
                 );
+                $questions = collect();
+                foreach (range(1, 3) as $number) {
+                    $question = Question::firstOrCreate(
+                        [
+                            'school_id' => $school->id,
+                            'subject_id' => $classSubject->subject_id,
+                            'topic_id' => $topic->id,
+                            'lesson_id' => $lesson->id,
+                            'prompt' => "Unit {$lessonNumber} question {$number}: which number comes after {$number}?",
+                        ],
+                        ['created_by' => $author->id, 'type' => 'multiple_choice', 'grading_key' => ['answer' => (string) ($number + 1)], 'max_score' => 1],
+                    );
+                    foreach ([$number, $number + 1, $number + 2] as $optionIndex => $option) {
+                        $question->options()->firstOrCreate(['label' => (string) $option], ['is_correct' => $option === $number + 1, 'sequence' => $optionIndex + 1]);
+                    }
+                    $questions->push($question);
+                }
                 foreach ($questions->take(3) as $questionIndex => $question) $quiz->quizQuestions()->firstOrCreate(['question_id' => $question->id], ['sequence' => $questionIndex + 1]);
                 foreach ($students as $studentIndex => $student) {
                     $attempt = QuizAttempt::firstOrCreate(['quiz_id' => $quiz->id, 'student_id' => $student->id, 'attempt_number' => 1], ['started_at' => now()->subDays(2), 'submitted_at' => $studentIndex % 2 === 0 ? now()->subDays(2) : null, 'score' => $studentIndex % 2 === 0 ? 2 : null, 'status' => $studentIndex % 2 === 0 ? 'submitted' : 'in_progress']);
@@ -235,7 +243,7 @@ class LmsDemoSeeder extends Seeder
             $period = $periods[$subjectIndex % $periods->count()];
             TimetableEntry::firstOrCreate(['timetable_id' => $timetable->id, 'school_class_id' => $class->id, 'day_of_week' => ($classIndex % 5) + 1, 'schedule_period_id' => $period->id], ['class_subject_id' => $classSubject->id, 'teacher_id' => $classSubject->teacher_id, 'room' => 'Room '.(($subjectIndex % 6) + 1)]);
         }
-        foreach ($classSubjects->take(10) as $index => $classSubject) Examination::firstOrCreate(['school_id' => $school->id, 'academic_year_id' => $year->id, 'term_id' => $term->id, 'class_subject_id' => $classSubject->id, 'title' => 'Term 1 examination'], ['teacher_id' => $classSubject->teacher_id, 'description' => 'End of term examination.', 'exam_date' => now()->addDays(30 + $index)->toDateString(), 'duration_minutes' => 90, 'max_score' => 100, 'status' => 'published']);
+        foreach ($classSubjects->take(10) as $index => $classSubject) Examination::firstOrCreate(['school_id' => $school->id, 'academic_year_id' => $year->id, 'term_id' => $term->id, 'class_subject_id' => $classSubject->id, 'title' => 'Term 1 examination'], ['teacher_id' => $classSubject->teacher_id, 'description' => 'End of term examination.', 'exam_date' => now()->addDays(30 + $index)->toDateString(), 'duration_minutes' => 90, 'max_score' => 100, 'status' => 'scheduled']);
 
         foreach (range(1, 10) as $number) Announcement::firstOrCreate(['school_id' => $school->id, 'title' => "Demo school announcement {$number}"], ['created_by' => $author->id, 'content' => 'This is a seeded school update for demonstration purposes.', 'audience' => 'school', 'published_at' => now()->subDays($number)]);
         foreach ($students->take(5) as $student) {

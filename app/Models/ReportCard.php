@@ -1,3 +1,61 @@
 <?php
-namespace App\Models; use Illuminate\Database\Eloquent\Model; use Illuminate\Database\Eloquent\Relations\BelongsTo;
-class ReportCard extends Model { protected $fillable=['student_id','academic_year_id','term_id','school_class_id','teacher_comment','headteacher_comment','attendance_percentage','status','pdf_path','generated_at','published_at']; protected $casts=['generated_at'=>'datetime','published_at'=>'datetime']; public function publish():void{$this->forceFill(['status'=>'published','published_at'=>now()])->save();} public function student():BelongsTo{return $this->belongsTo(Student::class);} public function academicYear():BelongsTo{return $this->belongsTo(AcademicYear::class);} public function term():BelongsTo{return $this->belongsTo(Term::class);} public function schoolClass():BelongsTo{return $this->belongsTo(SchoolClass::class);} }
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class ReportCard extends Model
+{
+    public const STATUSES = ['draft', 'published'];
+
+    protected $fillable = [
+        'student_id',
+        'academic_year_id',
+        'term_id',
+        'school_class_id',
+        'teacher_comment',
+        'headteacher_comment',
+        'attendance_percentage',
+        'status',
+        'pdf_path',
+        'generated_at',
+        'published_at',
+    ];
+
+    protected $casts = [
+        'attendance_percentage' => 'decimal:2',
+        'generated_at' => 'datetime',
+        'published_at' => 'datetime',
+    ];
+
+    public function publish(): void
+    {
+        $this->forceFill(['status' => 'published', 'published_at' => now()])->save();
+    }
+
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(Student::class);
+    }
+
+    public function academicYear(): BelongsTo
+    {
+        return $this->belongsTo(AcademicYear::class);
+    }
+
+    public function term(): BelongsTo
+    {
+        return $this->belongsTo(Term::class);
+    }
+
+    public function schoolClass(): BelongsTo
+    {
+        return $this->belongsTo(SchoolClass::class);
+    }
+
+    public function isPublished(): bool
+    {
+        return $this->status === 'published';
+    }
+}

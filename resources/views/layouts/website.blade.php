@@ -1,102 +1,188 @@
+@props([
+    'title' => null,
+    'description' => null,
+    'image' => null,
+    'type' => 'website',
+    'canonical' => null,
+    'robots' => 'index, follow',
+    'structuredData' => [],
+    'pageTitle' => null,
+    'pageDescription' => null,
+    'canonicalUrl' => null,
+    'canonicalPath' => null,
+    'socialImage' => null,
+])
+
+@php
+    $branding = app(\App\Support\SchoolBranding::class)->data();
+    $routeName = request()->route()?->getName();
+    $pageMetadata = [
+        'home' => ['title' => $branding['name'], 'description' => $branding['hero_subtitle']],
+        'website.about' => ['title' => 'About us', 'description' => "Learn about {$branding['name']}, our mission, values, and learning community."],
+        'website.academics' => ['title' => 'Academics', 'description' => "Explore the academic programmes and learning experience at {$branding['name']}."],
+        'website.admissions' => ['title' => 'Admissions', 'description' => "Learn how to join {$branding['name']} and begin your child's learning journey."],
+        'website.teachers' => ['title' => 'Our teachers', 'description' => "Meet the experienced and caring educators at {$branding['name']}."],
+        'website.news' => ['title' => 'School news', 'description' => "Read the latest stories, achievements, and updates from {$branding['name']}."],
+        'website.events' => ['title' => 'Events', 'description' => "Discover upcoming events and important dates at {$branding['name']}."],
+        'website.gallery' => ['title' => 'Gallery', 'description' => "See learning, creativity, and community life at {$branding['name']}."],
+        'website.contact' => ['title' => 'Contact us', 'description' => "Contact {$branding['name']} for admissions and general enquiries."],
+    ];
+    $routeMetadata = $pageMetadata[$routeName] ?? [];
+    $seoTitle = $pageTitle ?: $title ?: ($routeMetadata['title'] ?? $branding['name']);
+    $documentTitle = $routeName === 'home' || $seoTitle === $branding['name']
+        ? $branding['name']
+        : "{$seoTitle} | {$branding['name']}";
+    $seoDescription = str($pageDescription ?: $description ?: ($routeMetadata['description'] ?? $branding['motto']))->squish()->limit(160, '')->toString();
+    $canonicalUrl = $canonicalUrl ?: $canonical ?: ($canonicalPath ? url($canonicalPath) : url()->current());
+    $socialImage = $socialImage ?: $image ?: $branding['logo_url'];
+    $phoneHref = preg_replace('/[^+\d]/', '', (string) $branding['phone']);
+    $navigation = [
+        ['label' => 'Home', 'route' => 'home'],
+        ['label' => 'About', 'route' => 'website.about'],
+        ['label' => 'Academics', 'route' => 'website.academics'],
+        ['label' => 'Admissions', 'route' => 'website.admissions'],
+        ['label' => 'Teachers', 'route' => 'website.teachers'],
+        ['label' => 'News', 'route' => 'website.news'],
+        ['label' => 'Events', 'route' => 'website.events'],
+        ['label' => 'Gallery', 'route' => 'website.gallery'],
+        ['label' => 'Contact', 'route' => 'website.contact'],
+    ];
+    $sameAs = collect($branding['socials'])->filter()->values()->all();
+    $schoolSchema = array_filter([
+        '@type' => 'School',
+        'name' => $branding['name'],
+        'description' => $branding['motto'],
+        'url' => route('home'),
+        'logo' => $branding['logo_url'],
+        'email' => $branding['email'],
+        'telephone' => $branding['phone'],
+        'address' => $branding['address'],
+        'sameAs' => $sameAs ?: null,
+    ], fn ($value) => filled($value));
+    $additionalSchemas = filled($structuredData)
+        ? (array_is_list($structuredData) ? $structuredData : [$structuredData])
+        : [];
+    $schemaGraph = collect([$schoolSchema, ...$additionalSchemas])
+        ->filter(fn ($schema) => is_array($schema) && filled($schema))
+        ->map(function (array $schema): array {
+            unset($schema['@context']);
+
+            return $schema;
+        })
+        ->values()
+        ->all();
+    $structuredDataPayload = ['@context' => 'https://schema.org', '@graph' => $schemaGraph];
+@endphp
+
 <!DOCTYPE html>
-@php($branding = app(\App\Support\SchoolBranding::class)->data())
-<html lang="en">
+<html lang="en" class="scroll-smooth">
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ $branding['name'] }}</title>
-        <meta name="description" content="{{ $branding['motto'] }}">
-        <style>:root{--brand-primary:{{ $branding['colors']['primary'] }};--brand-secondary:{{ $branding['colors']['secondary'] }};--brand-accent:{{ $branding['colors']['accent'] }};} </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <meta name="theme-color" content="{{ $branding['colors']['primary'] }}">
+        <meta name="color-scheme" content="light">
+        <meta name="robots" content="{{ $robots }}">
+        <meta name="description" content="{{ $seoDescription }}">
+        <meta property="og:site_name" content="{{ $branding['name'] }}">
+        <meta property="og:type" content="{{ $type }}">
+        <meta property="og:title" content="{{ $documentTitle }}">
+        <meta property="og:description" content="{{ $seoDescription }}">
+        <meta property="og:url" content="{{ $canonicalUrl }}">
+        <meta name="twitter:card" content="{{ $socialImage ? 'summary_large_image' : 'summary' }}">
+        <meta name="twitter:title" content="{{ $documentTitle }}">
+        <meta name="twitter:description" content="{{ $seoDescription }}">
+        @if ($socialImage)
+            <meta property="og:image" content="{{ $socialImage }}">
+            <meta property="og:image:alt" content="{{ $branding['name'] }}">
+            <meta name="twitter:image" content="{{ $socialImage }}">
+        @endif
+        @if ($branding['logo_url'])
+            <link rel="icon" href="{{ $branding['logo_url'] }}">
+            <link rel="apple-touch-icon" href="{{ $branding['logo_url'] }}">
+        @endif
+        <link rel="canonical" href="{{ $canonicalUrl }}">
+        <title>{{ $documentTitle }}</title>
+        <style>
+            :root {
+                --brand-primary: {{ $branding['colors']['primary'] }};
+                --brand-secondary: {{ $branding['colors']['secondary'] }};
+                --brand-accent: {{ $branding['colors']['accent'] }};
+            }
+        </style>
+        <script type="application/ld+json">{!! json_encode($structuredDataPayload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
         @livewireStyles
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/js/website.js'])
     </head>
-    <body class="bg-slate-50 text-slate-900 antialiased">
-        <header class="relative border-b border-slate-200 bg-white/90 backdrop-blur-sm">
-            <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-                <div class="flex items-center gap-3">
-                    @if($branding['logo_url'])<img src="{{ $branding['logo_url'] }}" alt="{{ $branding['name'] }} logo" class="h-10 w-10 rounded-full object-cover ring-1 ring-slate-200">@else<div class="flex h-10 w-10 items-center justify-center rounded-full font-semibold text-white" style="background:var(--brand-primary)">{{ $branding['initials'] }}</div>@endif
-                    <div>
-                        <p class="text-lg font-bold tracking-wide text-slate-900">{{ $branding['name'] }}</p>
-                        <p class="text-xs uppercase tracking-[0.24em] text-slate-500">{{ $branding['motto'] }}</p>
-                    </div>
-                </div>
-                <nav class="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
-                    <a href="{{ route('home') }}" class="hover:text-blue-900">Home</a>
-                    <a href="{{ route('website.about') }}" class="hover:text-blue-900">About</a>
-                    <a href="{{ route('website.academics') }}" class="hover:text-blue-900">Academics</a>
-                    <a href="{{ route('website.admissions') }}" class="hover:text-blue-900">Admissions</a>
-                    <a href="{{ route('website.teachers') }}" class="hover:text-blue-900">Teachers</a>
-                    <a href="{{ route('website.news') }}" class="hover:text-blue-900">News</a>
-                    <a href="{{ route('website.events') }}" class="hover:text-blue-900">Events</a>
-                    <a href="{{ route('website.gallery') }}" class="hover:text-blue-900">Gallery</a>
-                    <a href="{{ route('website.contact') }}" class="hover:text-blue-900">Contact</a>
+    <body class="website-shell flex min-h-dvh flex-col bg-white text-slate-900 antialiased">
+        <a href="#website-main" class="website-skip-link">Skip to main content</a>
+
+        <header data-website-header class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 shadow-sm shadow-slate-950/5 backdrop-blur-xl">
+            <div class="relative z-20 mx-auto flex h-18 max-w-7xl items-center justify-between gap-3 px-4 sm:h-20 sm:px-6 lg:px-8">
+                <x-website.brand-mark :branding="$branding" class="min-w-0 flex-1 xl:max-w-64" />
+
+                <nav aria-label="Primary navigation" class="hidden shrink-0 items-center gap-0.5 xl:flex">
+                    @foreach ($navigation as $item)
+                        <x-website.nav-link :href="route($item['route'])" :active="request()->routeIs($item['route'], $item['route'].'.*')">
+                            {{ $item['label'] }}
+                        </x-website.nav-link>
+                    @endforeach
                 </nav>
-                <div class="flex items-center gap-3">
-                @auth
-                    <a href="{{ route('lms.dashboard') }}" class="rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90" style="background:var(--brand-primary)">
-                        Open portal
+
+                <div class="flex shrink-0 items-center gap-2">
+                    <a href="{{ auth()->check() ? route('lms.dashboard') : route('login') }}"
+                        class="hidden min-h-11 items-center justify-center rounded-full px-5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 xl:inline-flex"
+                        style="background-color: var(--brand-primary); outline-color: var(--brand-primary)">
+                        {{ auth()->check() ? 'Open portal' : 'Portal login' }}
                     </a>
-                @else
-                    <a href="{{ route('login') }}" class="rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90" style="background:var(--brand-primary)">
-                        Portal Login
-                    </a>
-                @endauth
-                <button id="website-menu-toggle" type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-700 md:hidden" aria-expanded="false" aria-controls="website-mobile-menu" aria-label="Open menu"><span aria-hidden="true">☰</span></button>
-                <div id="website-mobile-menu" class="absolute left-4 right-4 top-20 z-20 hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-xl md:hidden"><div class="grid gap-2 text-sm font-medium text-slate-700"><a href="{{ route('home') }}" class="rounded-lg px-3 py-2 hover:bg-slate-50">Home</a><a href="{{ route('website.about') }}" class="rounded-lg px-3 py-2 hover:bg-slate-50">About</a><a href="{{ route('website.academics') }}" class="rounded-lg px-3 py-2 hover:bg-slate-50">Academics</a><a href="{{ route('website.admissions') }}" class="rounded-lg px-3 py-2 hover:bg-slate-50">Admissions</a><a href="{{ route('website.teachers') }}" class="rounded-lg px-3 py-2 hover:bg-slate-50">Teachers</a><a href="{{ route('website.news') }}" class="rounded-lg px-3 py-2 hover:bg-slate-50">News</a><a href="{{ route('website.events') }}" class="rounded-lg px-3 py-2 hover:bg-slate-50">Events</a><a href="{{ route('website.gallery') }}" class="rounded-lg px-3 py-2 hover:bg-slate-50">Gallery</a><a href="{{ route('website.contact') }}" class="rounded-lg px-3 py-2 hover:bg-slate-50">Contact</a></div></div>
+                    <button data-website-menu-toggle type="button"
+                        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 xl:hidden"
+                        style="outline-color: var(--brand-primary)" aria-expanded="false"
+                        aria-controls="website-mobile-menu" aria-label="Open navigation">
+                        <svg data-menu-icon="open" aria-hidden="true" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" />
+                        </svg>
+                        <svg data-menu-icon="close" aria-hidden="true" class="hidden h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
             </div>
+
+            <div data-website-menu-backdrop class="fixed inset-0 top-18 z-0 hidden bg-slate-950/30 backdrop-blur-sm sm:top-20 xl:hidden" aria-hidden="true"></div>
+            <nav id="website-mobile-menu" data-website-menu aria-label="Mobile navigation"
+                class="absolute inset-x-0 top-full z-10 hidden max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-slate-200 bg-white px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 shadow-2xl sm:px-6 xl:hidden"
+                aria-hidden="true">
+                <div class="mx-auto grid max-w-7xl gap-1">
+                    @foreach ($navigation as $item)
+                        <x-website.nav-link :href="route($item['route'])" :active="request()->routeIs($item['route'], $item['route'].'.*')" mobile>
+                            {{ $item['label'] }}
+                        </x-website.nav-link>
+                    @endforeach
+                    <div class="my-2 border-t border-slate-200"></div>
+                    <a href="{{ auth()->check() ? route('lms.dashboard') : route('login') }}"
+                        class="inline-flex min-h-12 items-center justify-center rounded-xl px-5 text-sm font-bold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                        style="background-color: var(--brand-primary); outline-color: var(--brand-primary)">
+                        {{ auth()->check() ? 'Open learning portal' : 'Sign in to the portal' }}
+                    </a>
+                    <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 px-2 text-sm text-slate-600">
+                        @if ($branding['phone'])
+                            <a href="tel:{{ $phoneHref }}" class="hover:text-slate-950">{{ $branding['phone'] }}</a>
+                        @endif
+                        @if ($branding['email'])
+                            <a href="mailto:{{ $branding['email'] }}" class="break-all hover:text-slate-950">{{ $branding['email'] }}</a>
+                        @endif
+                    </div>
+                </div>
+            </nav>
         </header>
 
-        <main>
+        <main id="website-main" tabindex="-1" class="min-w-0 flex-1 outline-none">
             {{ $slot }}
         </main>
 
-        <footer class="border-t border-slate-200 bg-slate-900 text-slate-200">
-            <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-4 lg:px-8">
-                <div>
-                    <div class="flex items-center gap-3">@if($branding['logo_url'])<img src="{{ $branding['logo_url'] }}" alt="" class="h-10 w-10 rounded-full object-cover">@else<div class="flex h-10 w-10 items-center justify-center rounded-full font-semibold text-white" style="background:var(--brand-primary)">{{ $branding['initials'] }}</div>@endif<h3 class="text-lg font-semibold text-white">{{ $branding['name'] }}</h3></div>
-                    <p class="mt-4 text-sm text-slate-300">{{ $branding['footer_text'] }}</p>
-                </div>
-                <div>
-                    <h4 class="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">Explore</h4>
-                    <ul class="space-y-2 text-sm text-slate-300">
-                        <li><a href="{{ route('website.about') }}" class="hover:text-white">About us</a></li>
-                        <li><a href="{{ route('website.academics') }}" class="hover:text-white">Academics</a></li>
-                        <li><a href="{{ route('website.admissions') }}" class="hover:text-white">Admissions</a></li>
-                        <li><a href="{{ route('website.news') }}" class="hover:text-white">News & events</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">Quick links</h4>
-                    <ul class="space-y-2 text-sm text-slate-300">
-                        <li><a href="{{ auth()->check() ? route('lms.dashboard') : route('login') }}" class="hover:text-white">Parent portal</a></li>
-                        <li><a href="{{ auth()->check() ? route('lms.dashboard') : route('login') }}" class="hover:text-white">Student portal</a></li>
-                        <li><a href="{{ auth()->check() ? route('lms.dashboard') : route('login') }}" class="hover:text-white">Teacher resources</a></li>
-                        <li><a href="{{ route('website.contact') }}" class="hover:text-white">Support</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">Contact</h4>
-                    <ul class="space-y-2 text-sm text-slate-300">
-                        <li>{{ $branding['address'] }}</li>
-                        <li><a href="mailto:{{ $branding['email'] }}" class="hover:text-white">{{ $branding['email'] }}</a></li>
-                        <li>{{ $branding['phone'] }}</li>
-                        @foreach($branding['socials'] as $network => $url) @if($url)<li><a href="{{ $network === 'whatsapp' ? 'https://wa.me/'.preg_replace('/\D+/', '', $url) : $url }}" target="_blank" rel="noopener" class="capitalize hover:text-white">{{ $network }}</a></li>@endif @endforeach
-                    </ul>
-                </div>
-            </div>
-        </footer>
-        <script>
-            (() => {
-                const toggle = document.getElementById('website-menu-toggle');
-                const menu = document.getElementById('website-mobile-menu');
-                if (!toggle || !menu) return;
-                toggle.addEventListener('click', () => {
-                    const open = menu.classList.toggle('hidden') === false;
-                    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-                });
-            })();
-        </script>
+        <x-website.site-footer :branding="$branding" :navigation="$navigation" />
+        <x-website.gallery-lightbox />
+
         @livewireScripts
     </body>
 </html>

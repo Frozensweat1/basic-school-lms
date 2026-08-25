@@ -15,7 +15,7 @@ class AnnouncementPolicy
 
     public function view(User $user, Announcement $announcement): bool
     {
-        return $this->sameSchool($announcement) && $this->viewAny($user);
+        return $this->sameSchool($user, $announcement) && $this->viewAny($user);
     }
 
     public function create(User $user): bool
@@ -25,7 +25,7 @@ class AnnouncementPolicy
 
     public function update(User $user, Announcement $announcement): bool
     {
-        if (! $this->sameSchool($announcement)) {
+        if (! $this->sameSchool($user, $announcement)) {
             return false;
         }
 
@@ -38,8 +38,13 @@ class AnnouncementPolicy
         return $this->update($user, $announcement);
     }
 
-    private function sameSchool(Announcement $announcement): bool
+    private function sameSchool(User $user, Announcement $announcement): bool
     {
-        return (int) $announcement->school_id === (int) School::query()->value('id');
+        $schoolId = $user->student?->school_id
+            ?? $user->teacher?->school_id
+            ?? $user->parentGuardian?->school_id
+            ?? School::query()->value('id');
+
+        return (int) $announcement->school_id === (int) $schoolId;
     }
 }

@@ -1,2 +1,7 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /lms/
+Disallow: /login
+Disallow: /logout
+
+Sitemap: /sitemap.xml

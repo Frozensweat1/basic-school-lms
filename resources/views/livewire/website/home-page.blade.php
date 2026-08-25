@@ -1,6 +1,104 @@
 <div class="bg-white">
-    <x-website.hero eyebrow="Admissions open" :title="$page?->hero_title ?: $branding['hero_title']" :description="$page?->hero_subtitle ?: $branding['hero_subtitle']" :action="route('website.admissions')" action-label="Explore admissions" />
-    <section class="border-b border-slate-100 bg-white py-8"><div class="mx-auto grid max-w-7xl gap-4 px-4 sm:grid-cols-3 sm:px-6 lg:px-8">@foreach($stats as $label => $value)<div class="rounded-2xl bg-slate-50 p-5 text-center"><p class="text-3xl font-black text-slate-900">{{ $value }}</p><p class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{{ $label }}</p></div>@endforeach</div></section>
-    <section class="bg-slate-50 py-20"><div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div class="mb-12 text-center"><p class="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Our learning programmes</p><h2 class="mt-3 text-3xl font-bold text-slate-900">A well-rounded experience for every learner.</h2></div><div class="grid gap-8 md:grid-cols-3">@forelse($programs as $program)<article class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><div class="mb-4 inline-flex rounded-full bg-blue-100 px-3 py-2 text-xs font-semibold text-blue-700">BrightStar programme</div><h3 class="text-xl font-semibold text-slate-900">{{ $program['title'] ?? 'Learning programme' }}</h3><p class="mt-3 text-slate-600">{{ $program['description'] ?? '' }}</p></article>@empty<div class="md:col-span-3 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-600">Our programmes will be published soon.</div>@endforelse</div></div></section>
-    <section class="mx-auto grid max-w-7xl gap-8 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:px-8"><div><p class="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Latest from school</p><h2 class="mt-3 text-3xl font-bold text-slate-900">News and upcoming moments</h2><div class="mt-6 space-y-4">@foreach($articles as $article)<a href="{{ route('website.news') }}" class="block rounded-2xl border border-slate-200 p-5 hover:shadow-md"><p class="text-xs text-slate-500">{{ $article->published_at->format('d F Y') }}</p><h3 class="mt-1 font-semibold text-slate-900">{{ $article->title }}</h3><p class="mt-1 text-sm text-slate-600">{{ $article->excerpt }}</p></a>@endforeach</div></div><div><p class="text-sm font-semibold uppercase tracking-[0.2em] text-blue-700">Mark your calendar</p><h2 class="mt-3 text-3xl font-bold text-slate-900">Upcoming events</h2><div class="mt-6 space-y-4">@foreach($events as $event)<a href="{{ route('website.events') }}" class="block rounded-2xl border border-slate-200 p-5 hover:shadow-md"><p class="text-xs text-slate-500">{{ $event->starts_at->format('d F Y, H:i') }}</p><h3 class="mt-1 font-semibold text-slate-900">{{ $event->title }}</h3><p class="mt-1 text-sm text-slate-600">{{ $event->location }}</p></a>@endforeach</div></div></section>
+    <x-website.hero
+        variant="home"
+        eyebrow="Admissions are open"
+        :title="$page?->hero_title ?: $branding['hero_title']"
+        :description="$page?->hero_subtitle ?: $branding['hero_subtitle']"
+        :image="$page?->hero_image_path ? Storage::disk('public')->url($page->hero_image_path) : null"
+        :image-alt="$page?->hero_title ?: $branding['name']"
+        :action="route('website.admissions')"
+        action-label="Explore admissions"
+        :secondary-action="route('website.academics')"
+        secondary-action-label="Discover our learning"
+    />
+
+    <section aria-label="School at a glance" class="relative z-10 -mt-8 pb-16 sm:-mt-10 sm:pb-20">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="grid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-900/5 sm:grid-cols-3">
+                @foreach ($stats as $label => $value)
+                    <div class="px-6 py-7 text-center sm:border-r sm:border-slate-200 sm:last:border-r-0">
+                        <p class="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">{{ $value }}</p>
+                        <p class="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{{ $label }}</p>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-slate-50 py-16 sm:py-20 lg:py-24">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <x-website.section-heading
+                eyebrow="Learning at {{ $branding['name'] }}"
+                title="A strong foundation for every stage"
+                description="Purposeful programmes combine knowledge, creativity, wellbeing, and the confidence to keep learning."
+                align="center"
+            />
+
+            <div class="mt-10 grid gap-6 md:grid-cols-3">
+                @forelse ($programs as $program)
+                    <x-website.program-card :program="$program" />
+                @empty
+                    <div class="md:col-span-3">
+                        <x-website.empty-state title="Programme information is coming soon" description="Contact our school office and we will help you find the right learning stage." />
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </section>
+
+    <section class="py-16 sm:py-20 lg:py-24">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+                <x-website.section-heading
+                    eyebrow="School life"
+                    title="Learning continues beyond the classroom"
+                    description="Stay connected to the ideas, achievements, and shared moments shaping our school community."
+                />
+                <div class="flex flex-wrap gap-3 lg:justify-end">
+                    <a href="{{ route('website.news') }}" class="website-button website-button-secondary">All school news</a>
+                    <a href="{{ route('website.events') }}" class="website-button website-button-secondary">View the calendar</a>
+                </div>
+            </div>
+
+            <div class="mt-10 grid gap-10 lg:grid-cols-2">
+                <div>
+                    <div class="flex items-center justify-between gap-4">
+                        <h2 class="text-xl font-bold text-slate-950">Latest stories</h2>
+                        <span class="h-px flex-1 bg-slate-200" aria-hidden="true"></span>
+                    </div>
+                    <div class="mt-5 grid gap-5">
+                        @forelse ($articles as $article)
+                            <x-website.news-card :post="$article" compact />
+                        @empty
+                            <x-website.empty-state title="No stories yet" description="Fresh news from our classrooms and community will appear here." />
+                        @endforelse
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between gap-4">
+                        <h2 class="text-xl font-bold text-slate-950">Coming up</h2>
+                        <span class="h-px flex-1 bg-slate-200" aria-hidden="true"></span>
+                    </div>
+                    <div class="mt-5 grid gap-5">
+                        @forelse ($events as $event)
+                            <x-website.event-card :event="$event" compact />
+                        @empty
+                            <x-website.empty-state title="No upcoming events" description="New dates and community activities will be shared here." />
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <x-website.cta
+        eyebrow="Start the conversation"
+        title="Could this be the right school for your family?"
+        description="Learn about admissions, arrange a visit, or ask our team any question about your child’s next step."
+        :action="route('website.contact')"
+        action-label="Talk to our team"
+        :secondary-action="route('website.admissions')"
+        secondary-action-label="How to apply"
+    />
 </div>

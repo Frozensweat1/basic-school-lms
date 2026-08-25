@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
@@ -37,4 +39,607 @@
     box-shadow:
         0 32px 80px rgba(2, 6, 23, 0.55),
         0 0 0 1px rgba(255, 255, 255, 0.16) !important;
+}
+
+html.dark {
+    color-scheme: dark;
+}
+
+.sidebar-panel {
+    width: 18rem;
+    transform: translateX(-100%);
+    will-change: width, transform;
+}
+
+.sidebar-panel.sidebar-mobile-open {
+    transform: translateX(0);
+}
+
+.sidebar-panel.sidebar-collapsed {
+    width: 5rem;
+}
+
+.sidebar-panel.sidebar-collapsed .brand-copy,
+.sidebar-panel.sidebar-collapsed .nav-section-label,
+.sidebar-panel.sidebar-collapsed .nav-link-text,
+.sidebar-panel.sidebar-collapsed > div:first-child > div:first-child {
+    display: none;
+}
+
+.sidebar-panel.sidebar-collapsed > div:first-child {
+    justify-content: center;
+}
+
+.sidebar-panel.sidebar-collapsed .nav-link {
+    justify-content: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.sidebar-panel.sidebar-collapsed [data-sidebar-icon='desktop-collapse'] {
+    transform: rotate(180deg);
+}
+
+#sidebar-toggle > span {
+    display: none;
+}
+
+.nav-link {
+    min-height: 2.75rem;
+}
+
+button,
+a {
+    touch-action: manipulation;
+}
+
+#lms-main > * {
+    min-width: 0;
+}
+
+.sidebar-nav {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.6) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.5);
+    border-radius: 9999px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#lms-content-shell > header > div {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+
+#lms-content-shell > footer {
+    padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
+}
+
+/* Neutral and semantic surfaces used by existing LMS modules. */
+.dark #lms-main .bg-white {
+    background-color: #0f172a !important;
+}
+
+.dark #lms-main .bg-slate-50 {
+    background-color: #111827 !important;
+}
+
+.dark #lms-main .bg-slate-100,
+.dark #lms-main .bg-slate-200 {
+    background-color: #1e293b !important;
+}
+
+.dark #lms-main .text-slate-950,
+.dark #lms-main .text-slate-900,
+.dark #lms-main .text-slate-800,
+.dark #lms-main .text-slate-700 {
+    color: #f1f5f9 !important;
+}
+
+.dark #lms-main .text-slate-600,
+.dark #lms-main .text-slate-500,
+.dark #lms-main .text-slate-400 {
+    color: #94a3b8 !important;
+}
+
+.dark #lms-main .border-slate-100,
+.dark #lms-main .border-slate-200,
+.dark #lms-main .border-slate-300,
+.dark #lms-main .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.dark #lms-main .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #334155 !important;
+}
+
+.dark #lms-main .bg-blue-50,
+.dark #lms-main .bg-blue-100 {
+    background-color: #172554 !important;
+}
+
+.dark #lms-main .text-blue-950,
+.dark #lms-main .text-blue-900,
+.dark #lms-main .text-blue-800,
+.dark #lms-main .text-blue-700 {
+    color: #bfdbfe !important;
+}
+
+.dark #lms-main .bg-emerald-50,
+.dark #lms-main .bg-emerald-100 {
+    background-color: #022c22 !important;
+}
+
+.dark #lms-main .text-emerald-900,
+.dark #lms-main .text-emerald-800,
+.dark #lms-main .text-emerald-700 {
+    color: #a7f3d0 !important;
+}
+
+.dark #lms-main .bg-amber-50,
+.dark #lms-main .bg-amber-100 {
+    background-color: #451a03 !important;
+}
+
+.dark #lms-main .text-amber-900,
+.dark #lms-main .text-amber-800,
+.dark #lms-main .text-amber-700 {
+    color: #fde68a !important;
+}
+
+.dark #lms-main .bg-violet-50,
+.dark #lms-main .bg-violet-100 {
+    background-color: #2e1065 !important;
+}
+
+.dark #lms-main .text-violet-900,
+.dark #lms-main .text-violet-800,
+.dark #lms-main .text-violet-700 {
+    color: #ddd6fe !important;
+}
+
+.dark #lms-main .bg-rose-50,
+.dark #lms-main .bg-rose-100 {
+    background-color: #4c0519 !important;
+}
+
+.dark #lms-main .text-rose-900,
+.dark #lms-main .text-rose-800,
+.dark #lms-main .text-rose-700 {
+    color: #fecdd3 !important;
+}
+
+.dark #lms-main input:not([type='checkbox']):not([type='radio']):not([type='color']),
+.dark #lms-main select,
+.dark #lms-main textarea,
+.dark #lms-main .ql-toolbar,
+.dark #lms-main .ql-container {
+    border-color: #475569 !important;
+    background-color: #0f172a !important;
+    color: #f1f5f9 !important;
+}
+
+.dark #lms-main input::placeholder,
+.dark #lms-main textarea::placeholder {
+    color: #64748b;
+}
+
+.dark #lms-main .ql-stroke {
+    stroke: #cbd5e1 !important;
+}
+
+.dark #lms-main .ql-fill,
+.dark #lms-main .ql-picker {
+    color: #cbd5e1 !important;
+    fill: #cbd5e1 !important;
+}
+
+.dark .swal2-popup {
+    background: #0f172a;
+    color: #f1f5f9;
+}
+
+@media (min-width: 768px) {
+    .sidebar-panel {
+        transform: translateX(0);
+    }
+}
+
+@media (max-width: 767px) {
+    #lms-content-shell {
+        padding-left: 0 !important;
+    }
+}
+
+@media (max-width: 639px) {
+    #lms-main .grid-cols-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #lms-main .grid-cols-3 {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+
+/* Public website shell ----------------------------------------------------- */
+.website-shell {
+    --website-ring: var(--brand-primary, #1e3a8a);
+    min-width: 20rem;
+    overflow-x: clip;
+}
+
+.website-shell ::selection {
+    background: color-mix(in srgb, var(--brand-accent, #f59e0b), white 20%);
+    color: var(--brand-secondary, #0f172a);
+}
+
+.website-shell a,
+.website-shell button,
+.website-shell summary {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.website-shell img {
+    max-width: 100%;
+}
+
+.website-shell [id] {
+    scroll-margin-top: 6rem;
+}
+
+.website-skip-link {
+    position: fixed;
+    top: max(0.75rem, env(safe-area-inset-top));
+    left: max(0.75rem, env(safe-area-inset-left));
+    z-index: 10000;
+    transform: translateY(-200%);
+    border-radius: 0.75rem;
+    background: var(--brand-secondary, #0f172a);
+    color: #fff;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.28);
+    transition: transform 150ms ease;
+}
+
+.website-skip-link:focus {
+    transform: translateY(0);
+    outline: 3px solid var(--brand-accent, #f59e0b);
+    outline-offset: 2px;
+}
+
+.website-menu-open,
+.website-gallery-open {
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+[data-website-header] > div:first-child {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+[data-website-menu] {
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+[data-gallery-dialog] {
+    animation: website-dialog-enter 180ms ease-out;
+}
+
+[data-gallery-dialog]:not([open]) {
+    display: none;
+}
+
+[data-gallery-dialog]::backdrop {
+    animation: website-backdrop-enter 180ms ease-out;
+}
+
+.website-shell .website-button {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 750;
+    line-height: 1.25rem;
+    text-align: center;
+    text-decoration: none;
+    transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+.website-shell .website-button:hover {
+    transform: translateY(-1px);
+}
+
+.website-shell .website-button:focus-visible,
+.website-shell .website-icon-link:focus-visible,
+.website-shell .website-field:focus-visible {
+    outline: 2px solid var(--brand-primary, #1e3a8a);
+    outline-offset: 3px;
+}
+
+.website-shell .website-button:disabled,
+.website-shell .website-button[aria-disabled='true'] {
+    cursor: not-allowed;
+    transform: none;
+    opacity: 0.6;
+}
+
+.website-shell .website-button-primary {
+    background: var(--brand-primary, #1e3a8a);
+    color: #fff;
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--brand-primary, #1e3a8a), transparent 78%);
+}
+
+.website-shell .website-button-primary:hover {
+    background: color-mix(in srgb, var(--brand-primary, #1e3a8a), #000 12%);
+    box-shadow: 0 12px 24px color-mix(in srgb, var(--brand-primary, #1e3a8a), transparent 70%);
+}
+
+.website-shell .website-button-secondary {
+    border-color: #cbd5e1;
+    background: #fff;
+    color: #1e293b;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.website-shell .website-button-secondary:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+    color: var(--brand-primary, #1e3a8a);
+}
+
+.website-shell .website-field {
+    display: block;
+    min-height: 2.75rem;
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.875rem;
+    background: #fff;
+    padding: 0.7rem 0.875rem;
+    color: #0f172a;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.website-shell textarea.website-field {
+    min-height: 8rem;
+}
+
+.website-shell .website-field::placeholder {
+    color: #94a3b8;
+}
+
+.website-shell .website-field:hover {
+    border-color: #94a3b8;
+}
+
+.website-shell .website-field:focus {
+    border-color: var(--brand-primary, #1e3a8a);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary, #1e3a8a), transparent 88%);
+}
+
+.website-shell .website-field[aria-invalid='true'] {
+    border-color: #e11d48;
+    background: #fff7f8;
+    box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
+}
+
+.website-shell .website-icon-link {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    border-radius: 9999px;
+    background: #fff;
+    padding: 0.55rem 1rem;
+    color: #475569;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+}
+
+.website-shell .website-icon-link:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: var(--brand-primary, #1e3a8a);
+}
+
+.website-shell .website-prose {
+    color: #475569;
+    font-size: 1rem;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+}
+
+.website-shell .website-prose > :first-child {
+    margin-top: 0;
+}
+
+.website-shell .website-prose > :last-child {
+    margin-bottom: 0;
+}
+
+.website-shell .website-prose :where(p, ul, ol, blockquote, table, figure, pre) {
+    margin-block: 1.15em;
+}
+
+.website-shell .website-prose :where(h1, h2, h3, h4) {
+    margin-top: 1.75em;
+    margin-bottom: 0.65em;
+    color: #0f172a;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.website-shell .website-prose h1 {
+    font-size: clamp(2rem, 4vw, 2.75rem);
+}
+
+.website-shell .website-prose h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.website-shell .website-prose h3 {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+}
+
+.website-shell .website-prose :where(ul, ol) {
+    padding-left: 1.5rem;
+}
+
+.website-shell .website-prose ul {
+    list-style: disc;
+}
+
+.website-shell .website-prose ol {
+    list-style: decimal;
+}
+
+.website-shell .website-prose li {
+    padding-left: 0.25rem;
+    margin-block: 0.35rem;
+}
+
+.website-shell .website-prose a {
+    color: var(--brand-primary, #1e3a8a);
+    font-weight: 650;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--brand-primary, #1e3a8a), transparent 60%);
+    text-underline-offset: 0.2em;
+}
+
+.website-shell .website-prose a:hover {
+    text-decoration-color: currentColor;
+}
+
+.website-shell .website-prose blockquote {
+    border-left: 4px solid var(--brand-accent, #f59e0b);
+    border-radius: 0 0.75rem 0.75rem 0;
+    background: #f8fafc;
+    padding: 1rem 1.25rem;
+    color: #334155;
+    font-style: italic;
+}
+
+.website-shell .website-prose :where(img, video) {
+    height: auto;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+}
+
+.website-shell .website-prose figure figcaption {
+    margin-top: 0.6rem;
+    color: #64748b;
+    font-size: 0.8125rem;
+    text-align: center;
+}
+
+.website-shell .website-prose table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.website-shell .website-prose :where(th, td) {
+    border: 1px solid #e2e8f0;
+    padding: 0.65rem 0.8rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.website-shell .website-prose th {
+    background: #f8fafc;
+    color: #1e293b;
+    font-weight: 750;
+}
+
+.website-shell .website-prose pre {
+    max-width: 100%;
+    overflow-x: auto;
+    border-radius: 1rem;
+    background: #0f172a;
+    padding: 1rem;
+    color: #e2e8f0;
+    font-size: 0.875rem;
+}
+
+@keyframes website-dialog-enter {
+    from {
+        opacity: 0;
+        transform: translateY(0.75rem) scale(0.985);
+    }
+}
+
+@keyframes website-backdrop-enter {
+    from {
+        opacity: 0;
+    }
+}
+
+@media (min-width: 640px) {
+    [data-website-header] > div:first-child {
+        padding-left: max(1.5rem, env(safe-area-inset-left));
+        padding-right: max(1.5rem, env(safe-area-inset-right));
+    }
+}
+
+@media (min-width: 1024px) {
+    [data-website-header] > div:first-child {
+        padding-left: max(2rem, env(safe-area-inset-left));
+        padding-right: max(2rem, env(safe-area-inset-right));
+    }
+}
+
+@media (prefers-contrast: more) {
+    .website-shell a:focus-visible,
+    .website-shell button:focus-visible {
+        outline-width: 3px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-gallery-dialog],
+    [data-gallery-dialog]::backdrop {
+        animation: none;
+    }
+}
+
+@media print {
+    .website-shell [data-website-header],
+    .website-shell > footer,
+    .website-skip-link,
+    [data-gallery-dialog] {
+        display: none !important;
+    }
 }

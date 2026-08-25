@@ -2,15 +2,19 @@
 
 namespace App\Livewire\Website;
 
-use App\Models\WebsitePage;
-use Livewire\Attributes\Layout;
+use App\Support\PublicWebsiteData;
 use Livewire\Component;
 
-#[Layout('layouts.website')]
 class Academics extends Component
 {
     public function render()
     {
-        return view('livewire.website.academics', ['page' => WebsitePage::where('slug', 'academics')->first()]);
+        $site = app(PublicWebsiteData::class);
+        $page = $site->page('academics');
+
+        return view('livewire.website.academics', [
+            'branding' => $site->branding(),
+            'page' => $page,
+        ])->layout('layouts.website', $site->metadata('Academics', $page, route('website.academics')));
     }
 }

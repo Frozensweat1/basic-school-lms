@@ -3,26 +3,37 @@
 namespace App\Livewire\Website;
 
 use App\Models\Teacher;
-use App\Models\School;
-use Livewire\Attributes\Layout;
+use App\Support\PublicWebsiteData;
 use Livewire\Component;
+use Livewire\WithPagination;
 
-#[Layout('layouts.website')]
 class Teachers extends Component
 {
+    use WithPagination;
+
     public function render()
     {
-        $schoolId = School::query()->value('id');
+        $site = app(PublicWebsiteData::class);
+        $page = $site->page('teachers');
+        $schoolId = $site->schoolId();
         $teachers = Teacher::query()
             ->with('subjects:id,name')
             ->where('status', 'active')
             ->where('is_featured_on_website', true)
             ->orderBy('website_display_order')
-            ->when($schoolId, fn ($query) => $query->where('school_id', $schoolId))
+            ->when(
+                $schoolId,
+                fn ($query) => $query->where('school_id', $schoolId),
+                fn ($query) => $query->whereRaw('1 = 0'),
+            )
             ->orderBy('last_name')
             ->orderBy('first_name')
-            ->get();
+            ->paginate(12);
 
-        return view('livewire.website.teachers', compact('teachers'));
+        return view('livewire.website.teachers', [
+            'branding' => $site->branding(),
+            'page' => $page,
+            'teachers' => $teachers,
+        ])->layout('layouts.website', $site->metadata('Teachers', $page, route('website.teachers')));
     }
 }

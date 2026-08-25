@@ -28,4 +28,8 @@ class Lesson extends Model
     {
         return $this->hasMany(LessonProgress::class);
     }
+    public function questions(): HasMany
+    {
+        return $this->hasMany(Question::class);
+    }
 }

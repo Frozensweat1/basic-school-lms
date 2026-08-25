@@ -74,7 +74,9 @@ use App\Livewire\Website\Academics as WebsiteAcademics;
 use App\Livewire\Website\Admissions as WebsiteAdmissions;
 use App\Livewire\Website\Teachers as WebsiteTeachers;
 use App\Livewire\Website\News as WebsiteNews;
+use App\Livewire\Website\NewsShow as WebsiteNewsShow;
 use App\Livewire\Website\Events as WebsiteEvents;
+use App\Livewire\Website\EventShow as WebsiteEventShow;
 use App\Livewire\Website\Gallery as WebsiteGallery;
 use App\Livewire\Website\Contact as WebsiteContact;
 use App\Livewire\LMS\Website\Settings as WebsiteSettings;
@@ -85,6 +87,7 @@ use App\Livewire\LMS\Website\Inquiries\Index as WebsiteInquiriesIndex;
 use App\Livewire\LMS\Website\Teachers\Index as WebsiteTeachersIndex;
 use App\Livewire\LMS\Website\Gallery\Albums as WebsiteGalleryAlbums;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SitemapController;
 
 Route::get('/', HomePage::class)->name('home');
 Route::get('/about', WebsiteAbout::class)->name('website.about');
@@ -92,9 +95,16 @@ Route::get('/academics', WebsiteAcademics::class)->name('website.academics');
 Route::get('/admissions', WebsiteAdmissions::class)->name('website.admissions');
 Route::get('/teachers', WebsiteTeachers::class)->name('website.teachers');
 Route::get('/news', WebsiteNews::class)->name('website.news');
+Route::get('/news/{slug}', WebsiteNewsShow::class)
+    ->where('slug', '[A-Za-z0-9_-]+')
+    ->name('website.news.show');
 Route::get('/events', WebsiteEvents::class)->name('website.events');
+Route::get('/events/{slug}', WebsiteEventShow::class)
+    ->where('slug', '[A-Za-z0-9_-]+')
+    ->name('website.events.show');
 Route::get('/gallery', WebsiteGallery::class)->name('website.gallery');
 Route::get('/contact', WebsiteContact::class)->name('website.contact');
+Route::get('/sitemap.xml', SitemapController::class)->name('website.sitemap');
 
 Route::middleware(['auth'])->group(function () {
     Route::view('/lms/profile', 'profile.edit')->name('lms.profile.edit');

@@ -1,35 +1,63 @@
 <div class="bg-white">
-    <x-website.hero eyebrow="Meet our faculty" title="Experienced teachers, inspired learners" description="Our dedicated educators bring expertise, creativity, and care to every classroom." :action="route('website.contact')" action-label="Contact the school" />
-    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            @forelse($teachers as $teacher)
-                @php
-                    $name = trim(collect([$teacher->first_name, $teacher->middle_name, $teacher->last_name])->filter()->implode(' '));
-                    $initials = strtoupper(collect(preg_split('/\s+/', $name, -1, PREG_SPLIT_NO_EMPTY))->take(2)->map(fn ($word) => mb_substr($word, 0, 1))->implode(''));
-                @endphp
-                <article wire:key="teacher-{{ $teacher->id }}" class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition-shadow hover:shadow-lg">
-                    <div class="mx-auto mb-4 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-blue-100 to-blue-200">
-                        @if($teacher->photo_path)
-                            <img src="{{ Storage::disk('public')->url($teacher->photo_path) }}" alt="{{ $name }}" class="h-full w-full object-cover">
-                        @else
-                            <span class="text-4xl font-bold text-blue-700">{{ $initials ?: 'T' }}</span>
-                        @endif
+    <x-website.hero
+        eyebrow="Meet our faculty"
+        :title="$page?->hero_title ?: 'Experienced teachers, inspired learners'"
+        :description="$page?->hero_subtitle ?: 'Our educators bring expertise, creativity, high expectations, and genuine care to every classroom.'"
+        :image="$page?->hero_image_path ? Storage::disk('public')->url($page->hero_image_path) : null"
+        :image-alt="$page?->hero_title ?: 'Teachers at ' . $branding['name']"
+        :action="route('website.contact')"
+        action-label="Contact the school"
+    />
+
+    <section class="py-16 sm:py-20 lg:py-24">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <x-website.section-heading
+                eyebrow="People who make learning possible"
+                title="A team committed to every learner’s growth"
+                description="Get to know the featured educators who guide, challenge, encourage, and celebrate our learners."
+                align="center"
+            />
+
+            <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                @forelse ($teachers as $teacher)
+                    <x-website.teacher-card :teacher="$teacher" />
+                @empty
+                    <div class="sm:col-span-2 lg:col-span-3">
+                        <x-website.empty-state title="Our faculty directory is being updated" description="Please contact the school office if you would like to learn more about our teaching team." :action="route('website.contact')" action-label="Contact the school" />
                     </div>
-                    <h2 class="text-center text-xl font-bold text-slate-900">{{ $name ?: 'Faculty member' }}</h2>
-                    <p class="mt-1 text-center text-sm text-slate-600">{{ $teacher->subjects->pluck('name')->join(' · ') ?: 'Teaching faculty' }}</p>
-                    <p class="mt-4 line-clamp-2 text-center text-sm text-slate-600">{{ $teacher->public_bio ?: 'Our faculty team is here to help every learner thrive.' }}</p>
-                </article>
-            @empty
-                <div class="md:col-span-2 lg:col-span-3 rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-600">Our faculty directory is being updated. Please contact the school office for assistance.</div>
-            @endforelse
+                @endforelse
+            </div>
+
+            @if (method_exists($teachers, 'hasPages') && $teachers->hasPages())
+                <div class="mt-10">{{ $teachers->links() }}</div>
+            @endif
         </div>
-        <div class="mt-16 rounded-2xl bg-slate-50 p-12 text-center">
-            <h2 class="text-3xl font-bold text-slate-900">Why choose our teachers?</h2>
-            <div class="mt-8 grid gap-8 md:grid-cols-3">
-                <div><h3 class="text-lg font-semibold">Expert teachers</h3><p class="mt-2 text-sm text-slate-700">Highly qualified educators combine subject expertise with practical classroom experience.</p></div>
-                <div><h3 class="text-lg font-semibold">Personalized attention</h3><p class="mt-2 text-sm text-slate-700">Our team works closely with families to support each learner’s progress.</p></div>
-                <div><h3 class="text-lg font-semibold">Modern methods</h3><p class="mt-2 text-sm text-slate-700">Engaging lessons foster curiosity, critical thinking, and confidence.</p></div>
+    </section>
+
+    <section class="border-y border-slate-200 bg-slate-50 py-16 sm:py-20">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="grid gap-6 md:grid-cols-3">
+                @foreach ([
+                    ['title' => 'Subject expertise', 'description' => 'Strong knowledge and careful planning make complex ideas clear and engaging.'],
+                    ['title' => 'Responsive support', 'description' => 'Teachers notice individual needs and work with families to help learners progress.'],
+                    ['title' => 'Learning that lasts', 'description' => 'Discussion, practice, feedback, and reflection help learners use what they know.'],
+                ] as $item)
+                    <article class="rounded-3xl border border-slate-200 bg-white p-7">
+                        <h2 class="text-xl font-bold text-slate-950">{{ $item['title'] }}</h2>
+                        <p class="mt-3 leading-7 text-slate-600">{{ $item['description'] }}</p>
+                    </article>
+                @endforeach
             </div>
         </div>
-    </div>
+    </section>
+
+    <x-website.cta
+        eyebrow="A shared commitment"
+        title="Great progress starts with a strong school-family partnership"
+        description="Ask a question, arrange a visit, and discover how our team will support your child."
+        :action="route('website.contact')"
+        action-label="Start a conversation"
+        :secondary-action="route('website.admissions')"
+        secondary-action-label="Explore admissions"
+    />
 </div>

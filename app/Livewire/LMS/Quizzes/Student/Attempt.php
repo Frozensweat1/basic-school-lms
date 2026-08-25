@@ -2,7 +2,8 @@
 
 namespace App\Livewire\LMS\Quizzes\Student;
 
-use App\Models\{QuizAnswer, QuizAttempt};
+use App\Models\QuizAnswer;
+use App\Models\QuizAttempt;
 use Illuminate\Validation\ValidationException;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
@@ -13,6 +14,7 @@ use Throwable;
 class Attempt extends Component
 {
     public QuizAttempt $attempt;
+
     public array $answers = [];
 
     public function mount(QuizAttempt $attempt): void
@@ -23,14 +25,29 @@ class Attempt extends Component
             $quizQuestion->question?->makeHidden(['grading_key']);
             $quizQuestion->question?->options?->each->makeHidden('is_correct');
         });
-        $this->ensureAttemptOpen();
-        foreach ($this->attempt->answers as $answer) $this->answers[$answer->question_id] = $answer->answer[0] ?? '';
+
+        if ($message = $this->availabilityMessage()) {
+            $this->showUnavailableAlert($message);
+            $this->redirectRoute('lms.quizzes.student.index');
+
+            return;
+        }
+
+        foreach ($this->attempt->answers as $answer) {
+            $this->answers[$answer->question_id] = $answer->answer[0] ?? '';
+        }
     }
 
     public function save(): void
     {
         try {
-            $this->ensureAttemptOpen();
+            if ($message = $this->availabilityMessage()) {
+                $this->showUnavailableAlert($message);
+                $this->redirectRoute('lms.quizzes.student.index');
+
+                return;
+            }
+
             $questionIds = $this->attempt->quiz->quizQuestions->pluck('question_id')->map(fn ($id) => (string) $id)->all();
             $this->validate(['answers' => ['array'], 'answers.*' => ['nullable', 'string', 'max:10000']]);
             foreach (array_keys($this->answers) as $questionId) {
@@ -80,16 +97,38 @@ class Attempt extends Component
         return view('livewire.lms.quizzes.student.attempt', compact('questions'));
     }
 
-    private function ensureAttemptOpen(): void
+    private function availabilityMessage(): ?string
     {
-        abort_unless($this->attempt->status === 'in_progress', 422, 'This quiz attempt has already been submitted.');
+        if ($this->attempt->status !== 'in_progress') {
+            return 'This quiz attempt has already been submitted.';
+        }
+
         $quiz = $this->attempt->quiz;
-        abort_unless($quiz->status === 'published', 422, 'This quiz is no longer available.');
-        abort_unless(! $quiz->opens_at || $quiz->opens_at->isPast(), 422, 'This quiz has not opened yet.');
-        abort_unless(! $quiz->closes_at || $quiz->closes_at->isFuture(), 422, 'The quiz window has closed.');
+        if ($quiz->status !== 'published') {
+            return 'This quiz is no longer available.';
+        }
+
+        if ($quiz->hasNotOpened()) {
+            return 'This quiz opens '.$quiz->opens_at->format('d M Y \a\t g:i A').'.';
+        }
+
+        if ($quiz->hasClosed()) {
+            return 'The quiz window closed '.$quiz->closes_at->format('d M Y \a\t g:i A').'.';
+        }
+
         if ($quiz->time_limit_minutes && $this->attempt->started_at?->addMinutes($quiz->time_limit_minutes)->isPast()) {
             $this->attempt->update(['status' => 'submitted', 'submitted_at' => now()]);
-            abort(422, 'The time limit for this quiz has expired.');
+
+            return 'The time limit for this quiz has expired.';
         }
+
+        return null;
+    }
+
+    private function showUnavailableAlert(string $message): void
+    {
+        LivewireAlert::title('Quiz unavailable')
+            ->text($message)
+            ->warning()->asToast()->position('top-end')->show();
     }
 }

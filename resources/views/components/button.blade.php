@@ -33,6 +33,7 @@
         'save' => '<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 3h10l2 2v12H4V3Zm3 0v5h6V3m-6 14v-5h6v5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         'close' => '<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke-linecap="round"/></svg>',
         'sparkles' => '<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m10 2 1.2 4.3L15.5 7.5l-4.3 1.2L10 13l-1.2-4.3L4.5 7.5l4.3-1.2L10 2Zm5 10 .7 2.3L18 15l-2.3.7L15 18l-.7-2.3L12 15l2.3-.7L15 12Z" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        'play' => '<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m7 5 7 5-7 5V5Z" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     ];
     $iconMarkup = $icons[$icon] ?? $icon;
 @endphp

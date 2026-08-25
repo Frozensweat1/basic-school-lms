@@ -24,8 +24,16 @@ use App\Models\Question;
 use App\Models\Lesson;
 use App\Models\GradingScale;
 use App\Models\ReportCard;
+use App\Models\School;
+use App\Models\SchoolSetting;
 use App\Models\Term;
 use App\Models\Examination;
+use App\Models\WebsiteEvent;
+use App\Models\WebsiteGalleryAlbum;
+use App\Models\WebsiteGalleryImage;
+use App\Models\WebsiteNewsPost;
+use App\Models\WebsitePage;
+use App\Models\WebsiteSetting;
 use App\Policies\AcademicYearPolicy;
 use App\Policies\AnnouncementPolicy;
 use App\Policies\AssignmentPolicy;
@@ -50,6 +58,8 @@ use App\Policies\GradingScalePolicy;
 use App\Policies\ReportCardPolicy;
 use App\Policies\TermPolicy;
 use App\Policies\ExaminationPolicy;
+use App\Support\PublicWebsiteData;
+use App\Support\SchoolBranding;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
@@ -62,7 +72,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Branding is read by both the Livewire page and its layout. Keeping
+        // these services request-scoped avoids repeating the same settings
+        // queries during a public page render.
+        $this->app->scoped(SchoolBranding::class);
+        $this->app->scoped(PublicWebsiteData::class);
     }
 
     /**
@@ -97,5 +111,34 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Lesson::class, LessonPolicy::class);
         Gate::policy(Term::class, TermPolicy::class);
         Gate::policy(Examination::class, ExaminationPolicy::class);
+
+        $this->registerPublicWebsiteCacheInvalidation();
+    }
+
+    private function registerPublicWebsiteCacheInvalidation(): void
+    {
+        $flush = static function (): void {
+            PublicWebsiteData::flushCache();
+        };
+
+        foreach ([
+            WebsiteSetting::class,
+            WebsitePage::class,
+            WebsiteNewsPost::class,
+            WebsiteEvent::class,
+            WebsiteGalleryAlbum::class,
+            WebsiteGalleryImage::class,
+            School::class,
+            SchoolSetting::class,
+            Student::class,
+            Teacher::class,
+            Subject::class,
+        ] as $model) {
+            $model::saved($flush);
+            $model::deleted($flush);
+        }
+
+        Student::restored($flush);
+        Teacher::restored($flush);
     }
 }

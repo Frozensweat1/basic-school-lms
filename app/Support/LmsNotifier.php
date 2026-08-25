@@ -2,7 +2,9 @@
 
 namespace App\Support;
 
-use App\Models\{Announcement, SchoolClass, User};
+use App\Models\Announcement;
+use App\Models\SchoolClass;
+use App\Models\User;
 use App\Notifications\LmsNotification;
 use Illuminate\Support\Collection;
 
@@ -10,7 +12,7 @@ final class LmsNotifier
 {
     public static function classAudience(SchoolClass $class): Collection
     {
-        return $class->enrollments()
+        $learners = $class->enrollments()
             ->with(['student.user', 'student.parents.user'])
             ->where('status', 'active')
             ->get()
@@ -20,8 +22,11 @@ final class LmsNotifier
                 return collect([$student?->user])->merge($student?->parents?->pluck('user') ?? collect());
             })
             ->filter()
-            ->unique('id')
             ->values();
+        $teachers = $class->teachers()->with('user')->get()->pluck('user')
+            ->merge($class->classSubjects()->with('teacher.user')->get()->pluck('teacher.user'));
+
+        return $learners->merge($teachers)->filter()->unique('id')->values();
     }
 
     public static function send(iterable $users, string $title, string $message, ?string $url = null, string $kind = 'info'): void
@@ -37,6 +42,7 @@ final class LmsNotifier
     {
         if ($announcement->audience === 'class' && $announcement->school_class_id) {
             $class = SchoolClass::whereKey($announcement->school_class_id)->first();
+
             return $class ? self::classAudience($class) : collect();
         }
 
@@ -46,10 +52,17 @@ final class LmsNotifier
                 ->get()->flatMap(fn (SchoolClass $class) => self::classAudience($class))->unique('id')->values();
         }
 
+        if ($announcement->audience === 'teachers') {
+            return User::query()
+                ->whereHas('teacher', fn ($profile) => $profile->where('school_id', $announcement->school_id)->where('status', 'active'))
+                ->get();
+        }
+
         return User::query()->where(function ($query) use ($announcement) {
             $query->whereHas('student', fn ($profile) => $profile->where('school_id', $announcement->school_id))
                 ->orWhereHas('teacher', fn ($profile) => $profile->where('school_id', $announcement->school_id))
-                ->orWhereHas('parentGuardian', fn ($profile) => $profile->where('school_id', $announcement->school_id));
+                ->orWhereHas('parentGuardian', fn ($profile) => $profile->where('school_id', $announcement->school_id))
+                ->orWhereHas('roles', fn ($roles) => $roles->whereIn('name', ['super_admin', 'school_admin']));
         })->get();
     }
 }

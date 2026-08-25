@@ -2,24 +2,24 @@
 
 namespace App\Livewire\Website;
 
-use App\Models\{Student, Teacher, WebsiteEvent, WebsiteNewsPost, WebsitePage};
-use App\Support\SchoolBranding;
+use App\Support\PublicWebsiteData;
 use Livewire\Component;
 
 class HomePage extends Component
 {
     public function render()
     {
-        $page = WebsitePage::where('slug', 'home')->first();
-        $stats = ['Years of learning' => (string) (now()->year - 2005), 'Active learners' => (string) Student::where('status', 'active')->count(), 'Dedicated teachers' => (string) Teacher::where('status', 'active')->count()];
+        $site = app(PublicWebsiteData::class);
+        $page = $site->page('home');
+
         return view('livewire.website.home-page', [
-            'branding' => app(SchoolBranding::class)->data(),
+            'branding' => $site->branding(),
             'page' => $page,
-            'stats' => $stats,
-            'programs' => $page?->programs ?? [],
-            'articles' => WebsiteNewsPost::whereNotNull('published_at')->where('published_at', '<=', now())->latest('published_at')->limit(3)->get(),
-            'events' => WebsiteEvent::where('is_published', true)->where('starts_at', '>=', now())->orderBy('starts_at')->limit(3)->get(),
+            'stats' => $site->homeStats(),
+            'programs' => $page->programs ?? [],
+            'articles' => $site->latestNews(3),
+            'events' => $site->upcomingEvents(3),
         ])
-            ->layout('layouts.website');
+            ->layout('layouts.website', $site->metadata('Home', $page, route('home')));
     }
 }

@@ -1,8 +1,14 @@
+@props([
+    'unreadNotificationCount' => 0,
+    'branding' => [],
+])
+
 @php
     $sidebarUser = auth()->user();
     $sidebarRole = $sidebarUser?->hasRole('teacher')
         ? 'teacher'
         : ($sidebarUser?->hasRole('student') ? 'student' : ($sidebarUser?->hasRole('parent') ? 'parent' : 'admin'));
+    $sidebarIsAdministrator = $sidebarUser?->hasAnyRole(['super_admin', 'school_admin']) ?? false;
 
     $sidebarRoutes = [
         'lessons' => [
@@ -68,34 +74,43 @@
     ];
 @endphp
 
-<aside id="lms-sidebar" class="sidebar-panel fixed inset-y-0 left-0 z-30 flex h-dvh w-72 flex-col overflow-hidden border-r border-slate-200 bg-slate-900 text-slate-100 transition-all duration-200 ease-in-out">
-    <div class="z-10 shrink-0 flex items-center justify-between border-b border-slate-800 bg-slate-900 px-3 py-4">
+<aside id="lms-sidebar" class="sidebar-panel fixed inset-y-0 left-0 z-40 flex h-dvh w-72 flex-col overflow-hidden border-r border-slate-800 bg-slate-900 text-slate-100 shadow-2xl transition-[width,transform] duration-200 ease-in-out md:shadow-none" aria-label="Primary navigation" aria-hidden="true">
+    <div class="z-10 flex min-h-16 shrink-0 items-center justify-between border-b border-slate-800 bg-slate-900 px-3 py-2">
         <div class="flex min-w-0 items-center gap-3">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">BS</div>
+            @if ($branding['logo_url'] ?? null)
+                <img src="{{ $branding['logo_url'] }}" alt="{{ $branding['name'] }} logo" class="h-10 w-10 shrink-0 rounded-xl bg-white object-contain ring-1 ring-white/20">
+            @else
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white ring-1 ring-white/20" style="background-color: {{ data_get($branding, 'colors.primary', '#2563eb') }}">{{ $branding['initials'] ?? 'LMS' }}</div>
+            @endif
             <div class="brand-copy min-w-0">
-                <p class="truncate text-base font-semibold">BrightStar LMS</p>
-                <p class="text-xs uppercase tracking-[0.16em] text-slate-400">School portal</p>
+                <p class="truncate text-base font-semibold" title="{{ $branding['name'] ?? 'School LMS' }}">{{ $branding['name'] ?? 'School LMS' }}</p>
+                <p class="text-xs uppercase tracking-[0.16em] text-slate-400">Learning portal</p>
             </div>
         </div>
 
-        <button id="sidebar-toggle" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-700 bg-slate-800 text-slate-200 transition hover:bg-slate-700 hover:text-white" aria-label="Toggle sidebar" title="Collapse sidebar">
+        <button id="sidebar-toggle" type="button" class="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-slate-200 transition hover:bg-slate-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Close navigation" aria-controls="lms-sidebar" aria-expanded="false" title="Close navigation">
+            <!--
             <span aria-hidden="true">«</span>
+            -->
+            <svg data-sidebar-icon="mobile-close" class="h-5 w-5 md:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke-linecap="round"></path></svg>
+            <svg data-sidebar-icon="desktop-collapse" class="hidden h-5 w-5 md:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m14 7-5 5 5 5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
         </button>
     </div>
 
-    <nav class="sidebar-nav flex-1 space-y-5 overflow-y-auto px-3 py-5 text-sm">
+    <nav class="sidebar-nav flex-1 space-y-5 overflow-y-auto overscroll-contain px-3 py-5 text-sm" aria-label="LMS modules">
         <div>
             <p class="nav-section-label mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Main</p>
             <div class="space-y-1">
-                <a href="{{ route('lms.dashboard') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.dashboard')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                <a href="{{ route('lms.dashboard') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.dashboard*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">📊</span>
                     <span class="nav-link-text">Dashboard</span>
                 </a>
             </div>
         </div>
 
-        <div>
-            <p class="nav-section-label mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Academic Setup</p>
+        @if ($sidebarIsAdministrator)
+            <div>
+                <p class="nav-section-label mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Academic Setup</p>
             <div class="space-y-1">
                 <a href="{{ route('lms.academic-years.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.academic-years.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">📅</span>
@@ -117,6 +132,15 @@
                     <span aria-hidden="true">📚</span>
                     <span class="nav-link-text">Subjects</span>
                 </a>
+                @can('viewAny', App\Models\ClassSubject::class)
+                    <a href="{{ route('lms.class-subjects.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.class-subjects.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M4 5h16v14H4z" stroke-linejoin="round"></path>
+                            <path d="M8 3v4M16 3v4M7 11h10M8 15h3"></path>
+                        </svg>
+                        <span class="nav-link-text">Class Subjects</span>
+                    </a>
+                @endcan
             </div>
         </div>
 
@@ -136,7 +160,8 @@
                     <span class="nav-link-text">Parents</span>
                 </a>
             </div>
-        </div>
+            </div>
+        @endif
 
         <div>
             <p class="nav-section-label mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Learning</p>
@@ -163,6 +188,15 @@
                     <span aria-hidden="true">❓</span>
                     <span class="nav-link-text">Quizzes</span>
                 </a>
+                @can('viewAny', App\Models\Question::class)
+                    <a href="{{ route('lms.questions.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.questions.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M9 5h9M9 9h9M9 13h5M5 5h.01M5 9h.01M5 13h.01"></path>
+                            <path d="M4 3h16v18H4z" stroke-linejoin="round"></path>
+                        </svg>
+                        <span class="nav-link-text">Question Bank</span>
+                    </a>
+                @endcan
                 <a href="{{ route($sidebarRoutes['examinations'][$sidebarRole]) }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.examinations.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">📝</span>
                     <span class="nav-link-text">Examinations</span>
@@ -171,6 +205,24 @@
                     <span aria-hidden="true">📊</span>
                     <span class="nav-link-text">Assessments</span>
                 </a>
+                @can('viewAny', App\Models\AssessmentComponent::class)
+                    <a href="{{ route('lms.assessment-components.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.assessment-components.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M6 3h12v18H6z" stroke-linejoin="round"></path>
+                            <path d="M9 8h6M9 12h6M9 16h3"></path>
+                        </svg>
+                        <span class="nav-link-text">Assessment Components</span>
+                    </a>
+                @endcan
+                @can('viewAny', App\Models\GradingScale::class)
+                    <a href="{{ route('lms.grading-scales.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.grading-scales.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M6 3h12v18H6z" stroke-linejoin="round"></path>
+                            <path d="M9 8h6M9 12h6M9 16h3"></path>
+                        </svg>
+                        <span class="nav-link-text">Grading Scales</span>
+                    </a>
+                @endcan
             </div>
         </div>
 
@@ -208,15 +260,19 @@
                     <span aria-hidden="true">📢</span>
                     <span class="nav-link-text">Announcements</span>
                 </a>
-                <a href="{{ route('lms.notifications.index') ?? '#' }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.notifications.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                <a href="{{ route('lms.notifications.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.notifications.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">🔔</span>
                     <span class="nav-link-text">Notifications</span>
+                    @if ($unreadNotificationCount)
+                        <span class="nav-link-text ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">{{ $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount }}</span>
+                    @endif
                 </a>
             </div>
         </div>
 
-        <div>
-            <p class="nav-section-label mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Administration</p>
+        @if ($sidebarIsAdministrator)
+            <div>
+                <p class="nav-section-label mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Administration</p>
             <div class="space-y-1">
                 <a href="{{ route('lms.users.index') ?? '#' }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.users.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">👥</span>
@@ -239,6 +295,43 @@
                     <span class="nav-link-text">Settings</span>
                 </a>
             </div>
-        </div>
+            </div>
+        @endif
+
+        @can('manage website content')
+            <div>
+                <p class="nav-section-label mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Public Website</p>
+                <div class="space-y-1">
+                    <a href="{{ route('lms.website.settings') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.website.settings')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <span aria-hidden="true">🎨</span>
+                        <span class="nav-link-text">Brand & Contact</span>
+                    </a>
+                    <a href="{{ route('lms.website.pages') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.website.pages')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <span aria-hidden="true">🧩</span>
+                        <span class="nav-link-text">Website Pages</span>
+                    </a>
+                    <a href="{{ route('lms.website.news') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.website.news')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <span aria-hidden="true">📰</span>
+                        <span class="nav-link-text">News</span>
+                    </a>
+                    <a href="{{ route('lms.website.events') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.website.events')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <span aria-hidden="true">📅</span>
+                        <span class="nav-link-text">Events</span>
+                    </a>
+                    <a href="{{ route('lms.website.gallery') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.website.gallery')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <span aria-hidden="true">🖼️</span>
+                        <span class="nav-link-text">Gallery</span>
+                    </a>
+                    <a href="{{ route('lms.website.teachers') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.website.teachers')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <span aria-hidden="true">👩🏽‍🏫</span>
+                        <span class="nav-link-text">Featured Teachers</span>
+                    </a>
+                    <a href="{{ route('lms.website.inquiries') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.website.inquiries')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <span aria-hidden="true">✉️</span>
+                        <span class="nav-link-text">Enquiries</span>
+                    </a>
+                </div>
+            </div>
+        @endcan
     </nav>
 </aside>

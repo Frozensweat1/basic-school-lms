@@ -3,10 +3,11 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\DatabaseMessage;
 use Illuminate\Notifications\Notification;
 
-class LmsNotification extends Notification
+class LmsNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -15,8 +16,7 @@ class LmsNotification extends Notification
         public string $message,
         public ?string $url = null,
         public string $kind = 'info',
-    ) {
-    }
+    ) {}
 
     public function via(object $notifiable): array
     {

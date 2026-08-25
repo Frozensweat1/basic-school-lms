@@ -1,72 +1,76 @@
+@php
+    $content = $page?->content ?? [];
+    $approach = $content['approach'] ?? [
+        ['title' => 'Know each learner', 'description' => 'Regular feedback and responsive teaching help every learner make meaningful progress.'],
+        ['title' => 'Connect ideas to life', 'description' => 'Projects, discussion, practical work, and technology make learning useful and memorable.'],
+        ['title' => 'Build confident habits', 'description' => 'Learners practise curiosity, collaboration, reflection, and responsible independence.'],
+    ];
+@endphp
+
 <div class="bg-white">
-    <x-website.hero eyebrow="Our academic programs" :title="$page?->hero_title ?: 'Comprehensive education for every learner'" :description="$page?->hero_subtitle ?: 'Discover our curriculum, teaching methods, and learning outcomes that prepare students for success.'" />
-    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        <div class="grid gap-12 lg:grid-cols-3">
-            @if($page?->programs)
-                @foreach($page->programs as $program)
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-8 transition-shadow hover:shadow-lg"><div class="mb-4 inline-flex rounded-full bg-blue-100 p-3 text-blue-700">📚</div><h3 class="text-2xl font-bold text-slate-900">{{ $program['title'] ?? 'Programme' }}</h3><p class="mt-3 text-slate-600">{{ $program['description'] ?? '' }}</p><div class="mt-6"><a href="{{ route('website.contact') }}" class="text-sm font-semibold text-blue-900 hover:text-blue-800">Ask about this programme →</a></div></div>
+    <x-website.hero
+        eyebrow="Learning with purpose"
+        :title="$page?->hero_title ?: 'A balanced education for every learner'"
+        :description="$page?->hero_subtitle ?: 'Explore a curriculum that brings together strong foundations, creativity, wellbeing, and real-world understanding.'"
+        :image="$page?->hero_image_path ? Storage::disk('public')->url($page->hero_image_path) : null"
+        :image-alt="$page?->hero_title ?: 'Learners at ' . $branding['name']"
+        :action="route('website.contact')"
+        action-label="Ask about our curriculum"
+    />
+
+    <section class="py-16 sm:py-20 lg:py-24">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <x-website.section-heading
+                eyebrow="Our programmes"
+                title="Learning designed for every stage"
+                description="Each programme is age-appropriate, connected to clear outcomes, and enriched by opportunities to explore."
+                align="center"
+            />
+
+            <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                @forelse (($page?->programs ?? []) as $program)
+                    <x-website.program-card :program="$program" />
+                @empty
+                    <div class="md:col-span-2 lg:col-span-3">
+                        <x-website.empty-state title="Programme details are being prepared" description="Our school team can share current curriculum and class information with your family." :action="route('website.contact')" action-label="Request information" />
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </section>
+
+    <section class="border-y border-slate-200 bg-slate-50 py-16 sm:py-20 lg:py-24">
+        <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-start lg:px-8">
+            <div>
+                <x-website.section-heading eyebrow="How we teach" title="Thoughtful teaching that turns knowledge into confidence" />
+                @if (!empty($content['body']))
+                    <div class="website-prose mt-6">{!! $content['body'] !!}</div>
+                @else
+                    <p class="mt-6 text-lg leading-8 text-slate-600">Great learning is clear, active, and connected. Teachers explain important ideas, invite thoughtful questions, check understanding, and give learners the time and guidance to improve.</p>
+                @endif
+            </div>
+
+            <div class="grid gap-5">
+                @foreach ($approach as $index => $item)
+                    <article class="grid grid-cols-[auto_1fr] gap-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <span class="flex h-12 w-12 items-center justify-center rounded-2xl font-black text-white" style="background: var(--brand-primary)">{{ $index + 1 }}</span>
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-950">{{ $item['title'] ?? 'Our approach' }}</h2>
+                            <p class="mt-2 leading-7 text-slate-600">{{ $item['description'] ?? '' }}</p>
+                        </div>
+                    </article>
                 @endforeach
-            @else
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-8 transition-shadow hover:shadow-lg">
-                <div class="mb-4 inline-flex rounded-full bg-blue-100 p-3 text-blue-700">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                </div>
-                <h3 class="text-2xl font-bold text-slate-900">Primary Education</h3>
-                <p class="mt-3 text-slate-600">KG 1 - Basic 9 (Ages 3-18)</p>
-                <ul class="mt-4 space-y-2 text-sm text-slate-600">
-                    <li>• Strong literacy and numeracy foundations</li>
-                    <li>• Creative and critical thinking skills</li>
-                    <li>• Visual arts and music integration</li>
-                    <li>• Physical education and wellness</li>
-                </ul>
-                <div class="mt-6">
-                    <a href="{{ route('website.contact') }}" class="text-sm font-semibold text-blue-900 hover:text-blue-800">Ask about this programme →</a>
-                </div>
-            </div>
-
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-8 transition-shadow hover:shadow-lg">
-                <div class="mb-4 inline-flex rounded-full bg-amber-100 p-3 text-amber-700">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                </div>
-                <h3 class="text-2xl font-bold text-slate-900">Secondary Education</h3>
-                <p class="mt-3 text-slate-600">Basic 6 - Basic 9 (Ages 11-18)</p>
-                <ul class="mt-4 space-y-2 text-sm text-slate-600">
-                    <li>• Advanced STEM subjects</li>
-                    <li>Research and project-based learning</li>
-                    <li>Leadership development</li>
-                    <li>University preparation</li>
-                </ul>
-                <div class="mt-6">
-                    <a href="{{ route('website.contact') }}" class="text-sm font-semibold text-blue-900 hover:text-blue-800">Ask about this programme →</a>
-                </div>
-            </div>
-
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-8 transition-shadow hover:shadow-lg">
-                <div class="mb-4 inline-flex rounded-full bg-emerald-100 p-3 text-emerald-700">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                </div>
-                <h3 class="text-2xl font-bold text-slate-900">Extracurricular</h3>
-                <p class="mt-3 text-slate-600">Arts, sports, and special interests</p>
-                <ul class="mt-4 space-y-2 text-sm text-slate-600">
-                    <li>• Music and performing arts</li>
-                    <li>• Sports teams and fitness programs</li>
-                    <li>• Student government and clubs</li>
-                    <li>• Community service projects</li>
-                </ul>
-                <div class="mt-6">
-                    <a href="{{ route('website.contact') }}" class="text-sm font-semibold text-blue-900 hover:text-blue-800">Ask about this programme →</a>
-                </div>
-            </div>
-            @endif
-        </div>
-
-        <div class="mt-16 rounded-2xl bg-slate-900 p-12 text-white text-center">
-            <h2 class="text-3xl font-bold">Ready to begin your child's educational journey?</h2>
-            <p class="mt-4 text-lg text-slate-300">Schedule a campus tour or request more information about our programs.</p>
-            <div class="mt-8 flex flex-wrap justify-center gap-4">
-                <a href="{{ route('website.contact') }}" class="rounded-full bg-white px-6 py-3 text-sm font-semibold text-blue-900 shadow-sm hover:bg-slate-100">Request information</a>
-                <a href="{{ route('website.contact') }}" class="rounded-full border border-slate-400 px-6 py-3 text-sm font-semibold text-white hover:border-slate-300">Schedule tour</a>
             </div>
         </div>
-    </div>
+    </section>
+
+    <x-website.cta
+        eyebrow="See learning in context"
+        title="Visit the school and experience our classrooms"
+        description="A conversation and campus visit can help you understand the right programme for your child."
+        :action="route('website.contact')"
+        action-label="Arrange a visit"
+        :secondary-action="route('website.admissions')"
+        secondary-action-label="View admissions"
+    />
 </div>

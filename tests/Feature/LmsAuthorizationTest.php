@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\ParentGuardian;
+use App\Models\School;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -42,11 +44,22 @@ class LmsAuthorizationTest extends TestCase
 
     public function test_parent_can_view_dashboard(): void
     {
+        $school = School::create(['name' => 'BrightStar Academy', 'code' => 'BSA']);
         $user = User::factory()->create();
         $user->assignRole('parent');
+        ParentGuardian::create([
+            'user_id' => $user->id,
+            'school_id' => $school->id,
+            'first_name' => 'Akosua',
+            'last_name' => 'Mensah',
+        ]);
 
         $this->actingAs($user)
             ->get('/lms/dashboard')
+            ->assertRedirect(route('lms.dashboard.parent'));
+
+        $this->actingAs($user)
+            ->get(route('lms.dashboard.parent'))
             ->assertOk();
     }
 }

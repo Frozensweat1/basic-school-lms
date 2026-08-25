@@ -1,69 +1,70 @@
-<div class="bg-white">
-    <x-website.hero eyebrow="About our school" :title="$page?->hero_title ?: 'Nurturing curious minds and confident leaders'" :description="$page?->hero_subtitle ?: 'Discover our story, our teaching philosophy, and why families choose us.'" />
-    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        <div class="grid gap-12 lg:grid-cols-2 lg:items-center">
-            <div>
-                <h2 class="text-3xl font-bold text-slate-900">Our Mission</h2>
-                <p class="mt-4 text-lg text-slate-600">
-                    {{ $page?->content['mission'] ?? 'We believe education is the foundation of opportunity. Our mission is to provide every student with a rigorous academic program, creative learning experiences, and a supportive community.' }}
-                </p>
-                <p class="mt-4 text-lg text-slate-600">At {{ app(\App\Support\SchoolBranding::class)->data()['name'] }},
-                    we don't just teach students to pass tests; we teach them how to think, explore, collaborate, and
-                    lead.</p>
-            </div>
-            <div class="relative">
-                <div
-                    class="aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-blue-900 via-blue-800 to-sky-600 shadow-xl">
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <div class="rounded-2xl bg-white/10 p-8 text-white backdrop-blur-sm">
-                            <p class="text-sm uppercase tracking-[0.2em] text-blue-100">Our commitment</p>
-                            <h3 class="mt-4 text-2xl font-bold">Quality education for every child</h3>
-                            <ul class="mt-6 space-y-3 text-sm text-blue-50">
-                                <li>• Small class sizes for personalized attention</li>
-                                <li>• Experienced, caring teachers</li>
-                                <li>• Modern, technology-enhanced learning</li>
-                                <li>• Holistic development of mind and character</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+@php
+    $content = $page?->content ?? [];
+    $values = $content['values'] ?? [
+        ['title' => 'Excellence with purpose', 'description' => 'We set ambitious standards while helping every learner understand why their work matters.'],
+        ['title' => 'Belonging and care', 'description' => 'Every child deserves to be known, respected, supported, and safe enough to be curious.'],
+        ['title' => 'Character in action', 'description' => 'Integrity, empathy, responsibility, and service are practised in everyday school life.'],
+    ];
+@endphp
 
-        <div class="mt-16 grid gap-8 md:grid-cols-3">
-            <div class="rounded-2xl bg-slate-50 p-6 text-center transition-shadow hover:shadow-lg">
-                <div class="mb-4 inline-flex rounded-full bg-blue-100 p-3 text-blue-700">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold text-slate-900">Academic Excellence</h3>
-                <p class="mt-2 text-sm text-slate-600">Proven curriculum with comprehensive assessments and learning
-                    outcomes.</p>
+<div class="bg-white">
+    <x-website.hero
+        eyebrow="About our school"
+        :title="$page?->hero_title ?: 'A school built around the whole child'"
+        :description="$page?->hero_subtitle ?: 'Discover our story, our teaching philosophy, and the community that helps learners thrive.'"
+        :image="$page?->hero_image_path ? Storage::disk('public')->url($page->hero_image_path) : null"
+        :image-alt="$page?->hero_title ?: $branding['name']"
+        :secondary-action="route('website.contact')"
+        secondary-action-label="Plan a visit"
+    />
+
+    <section class="py-16 sm:py-20 lg:py-24">
+        <div class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:items-start lg:gap-16 lg:px-8">
+            <div>
+                <x-website.section-heading eyebrow="Our story" title="A place to be known, challenged, and encouraged" />
+                @if (!empty($content['body']))
+                    <div class="website-prose mt-6">{!! $content['body'] !!}</div>
+                @else
+                    <p class="mt-6 text-lg leading-8 text-slate-600">At {{ $branding['name'] }}, education is a partnership between learners, families, and caring professionals. We build strong academic foundations while creating room for questions, creativity, friendship, and meaningful responsibility.</p>
+                    <p class="mt-4 leading-7 text-slate-600">Our classrooms are shaped by high expectations and thoughtful support, so each learner can grow in confidence and contribute positively to the world around them.</p>
+                @endif
             </div>
-            <div class="rounded-2xl bg-slate-50 p-6 text-center transition-shadow hover:shadow-lg">
-                <div class="mb-4 inline-flex rounded-full bg-amber-100 p-3 text-amber-700">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857m0 0a5.002 5.002 0 009.356-2.684M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold text-slate-900">Vibrant Community</h3>
-                <p class="mt-2 text-sm text-slate-600">Strong sense of belonging with extracurricular activities and
-                    community events.</p>
-            </div>
-            <div class="rounded-2xl bg-slate-50 p-6 text-center transition-shadow hover:shadow-lg">
-                <div class="mb-4 inline-flex rounded-full bg-emerald-100 p-3 text-emerald-700">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                </div>
-                <h3 class="text-xl font-semibold text-slate-900">Future Ready</h3>
-                <p class="mt-2 text-sm text-slate-600">Preparation for higher education and success in our
-                    interconnected world.</p>
+
+            <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
+                <article class="rounded-3xl border border-slate-200 bg-slate-50 p-7">
+                    <p class="text-sm font-bold uppercase tracking-[0.16em] text-[var(--brand-primary)]">Our mission</p>
+                    <p class="mt-4 text-lg leading-8 text-slate-700">{{ $content['mission'] ?? 'To provide a safe, ambitious learning environment where every child is known, supported, and encouraged to make a positive difference.' }}</p>
+                </article>
+                <article class="rounded-3xl p-7 text-white shadow-xl" style="background: var(--brand-secondary)">
+                    <p class="text-sm font-bold uppercase tracking-[0.16em] text-white/70">Our vision</p>
+                    <p class="mt-4 text-lg leading-8 text-white/90">{{ $content['vision'] ?? 'Confident, compassionate, and capable learners who are ready to keep growing and lead with purpose.' }}</p>
+                </article>
             </div>
         </div>
-    </div>
+    </section>
+
+    <section class="border-y border-slate-200 bg-slate-50 py-16 sm:py-20 lg:py-24">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <x-website.section-heading eyebrow="What guides us" title="Values families can see in everyday school life" description="Our values shape the way we teach, learn, collaborate, and care for one another." align="center" />
+            <div class="mt-10 grid gap-6 md:grid-cols-3">
+                @foreach ($values as $index => $value)
+                    <article class="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+                        <span class="flex h-11 w-11 items-center justify-center rounded-2xl text-sm font-black text-white" style="background: var(--brand-primary)">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                        <h2 class="mt-6 text-xl font-bold text-slate-950">{{ $value['title'] ?? 'Our value' }}</h2>
+                        <p class="mt-3 leading-7 text-slate-600">{{ $value['description'] ?? '' }}</p>
+                    </article>
+                @endforeach
+            </div>
+        </div>
+    </section>
+
+    <x-website.cta
+        eyebrow="Meet the people behind the learning"
+        title="Dedicated teachers make a lasting difference"
+        description="Get to know the educators who create thoughtful, engaging, and supportive learning experiences."
+        :action="route('website.teachers')"
+        action-label="Meet our teachers"
+        :secondary-action="route('website.contact')"
+        secondary-action-label="Contact the school"
+    />
 </div>
