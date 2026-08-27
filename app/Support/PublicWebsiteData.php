@@ -207,6 +207,62 @@ class PublicWebsiteData
         ]);
     }
 
+    /**
+     * @return array<int, array{author: string, role: string, text: string, rating: int, avatar?: string}>
+     */
+    public function homeTestimonials(): array
+    {
+        $configured = collect($this->page('home')->content['testimonials'] ?? [])
+            ->filter(fn ($row): bool => is_array($row))
+            ->map(function (array $row): array {
+                $author = trim((string) ($row['author'] ?? ''));
+                $text = trim((string) ($row['text'] ?? ''));
+
+                if ($author === '' || $text === '') {
+                    return [];
+                }
+
+                $avatar = trim((string) ($row['avatar'] ?? ''));
+
+                return array_filter([
+                    'author' => $author,
+                    'role' => trim((string) ($row['role'] ?? 'Parent')),
+                    'text' => $text,
+                    'rating' => max(1, min(5, (int) ($row['rating'] ?? 5))),
+                    'avatar' => $avatar !== '' ? $this->publicImageUrl($avatar) : null,
+                ], fn ($value): bool => $value !== null);
+            })
+            ->filter(fn (array $row): bool => $row !== [])
+            ->take(6)
+            ->values()
+            ->all();
+
+        if ($configured !== []) {
+            return $configured;
+        }
+
+        return [
+            [
+                'author' => 'Ama Mensah',
+                'role' => 'Parent',
+                'text' => 'My daughter has grown in confidence and curiosity. The teachers are responsive, and communication with families is excellent.',
+                'rating' => 5,
+            ],
+            [
+                'author' => 'Kojo Owusu',
+                'role' => 'Alumnus',
+                'text' => 'BrightStar gave me a strong foundation in reading, maths, and teamwork. I still use those skills every day.',
+                'rating' => 5,
+            ],
+            [
+                'author' => 'Esi Boateng',
+                'role' => 'Parent',
+                'text' => 'From academics to wellbeing, the school supports every child with care and clear expectations.',
+                'rating' => 5,
+            ],
+        ];
+    }
+
     public function latestNews(int $limit = 3): Collection
     {
         return $this->remember('latest-news:'.$limit, fn (): Collection => WebsiteNewsPost::query()

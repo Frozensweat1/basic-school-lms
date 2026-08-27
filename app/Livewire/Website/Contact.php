@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Website;
 
+use App\Livewire\Traits\HasNewsletterSubscription;
 use App\Models\WebsiteInquiry;
 use App\Support\PublicWebsiteData;
 use Illuminate\Support\Facades\RateLimiter;
@@ -12,6 +13,7 @@ use Livewire\Component;
 
 class Contact extends Component
 {
+    use HasNewsletterSubscription;
     public string $name = '';
 
     public string $email = '';

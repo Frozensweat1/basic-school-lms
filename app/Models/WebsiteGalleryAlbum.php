@@ -12,6 +12,8 @@ class WebsiteGalleryAlbum extends Model
     public function images(): HasMany
     {
         return $this->hasMany(WebsiteGalleryImage::class, 'album_id')
+            ->whereNotNull('path')
+            ->where('path', '!=', '')
             ->orderBy('sort_order');
     }
 }

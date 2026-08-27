@@ -19,7 +19,7 @@
 
                     <div class="mt-7 grid auto-rows-[12rem] gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         @forelse ($album->images as $index => $image)
-                            @php($imageUrl = $image->path ? Storage::disk('public')->url($image->path) : null)
+                            @php($imageUrl = $image->url)
                             <figure wire:key="gallery-image-{{ $image->id }}" class="group relative overflow-hidden rounded-3xl bg-slate-100 {{ $index === 0 ? 'sm:col-span-2 sm:row-span-2 sm:auto-rows-auto' : '' }}">
                                 @if ($imageUrl)
                                     <button

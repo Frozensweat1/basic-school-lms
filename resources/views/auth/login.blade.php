@@ -1,56 +1,51 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Login | BrightStar LMS</title>
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-    </head>
-    <body class="bg-slate-100">
-        <div class="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-4 py-12">
-            <div class="grid w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl lg:grid-cols-2">
-                <div class="hidden bg-gradient-to-br from-blue-900 via-blue-800 to-sky-600 p-10 text-white lg:block">
-                    <p class="text-sm uppercase tracking-[0.24em] text-blue-100">BrightStar Academy</p>
-                    <h1 class="mt-8 text-3xl font-bold">Welcome back.</h1>
-                    <p class="mt-4 max-w-sm text-blue-100">Access the school portal for classes, attendance, results, and communication.</p>
+<x-layouts.auth title="Sign in">
+    <div class="space-y-6">
+        <div>
+            <p class="text-xs font-bold uppercase tracking-[0.22em] text-blue-700">Welcome back</p>
+            <h2 class="mt-3 text-3xl font-black tracking-tight text-slate-950">Sign in to your portal</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-600">Access classes, attendance, results, and school communication from one secure place.</p>
+        </div>
+
+        @if (session('status'))
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="status">{{ session('status') }}</div>
+        @endif
+
+        @if ($errors->any())
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800" role="alert">{{ $errors->first() }}</div>
+        @endif
+
+        <form method="POST" action="{{ route('login.store') }}" data-loading-form class="space-y-5" novalidate>
+            @csrf
+
+            <div>
+                <label for="email" class="mb-2 block text-sm font-bold text-slate-800">Email address</label>
+                <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="username" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 shadow-sm transition focus:border-blue-700 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="you@example.com">
+            </div>
+
+            <div>
+                <div class="mb-2 flex items-center justify-between gap-3">
+                    <label for="password" class="block text-sm font-bold text-slate-800">Password</label>
+                    <a href="{{ route('password.request') }}" class="text-sm font-semibold text-blue-700 transition hover:text-blue-900">Forgot password?</a>
                 </div>
-                <div class="p-8 sm:p-10">
-                    <h2 class="text-2xl font-bold text-slate-900">Sign in</h2>
-                    <p class="mt-2 text-sm text-slate-500">Use your email and password to continue.</p>
-
-                    <form method="POST" action="{{ route('login') }}" class="mt-8 space-y-5">
-                        @csrf
-
-                        @if ($errors->any())
-                            <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800" role="alert">
-                                {{ $errors->first('email') ?: 'We could not sign you in. Check your email and password and try again.' }}
-                            </div>
-                        @endif
-
-                        <div>
-                            <label for="email" class="mb-2 block text-sm font-medium text-slate-700">Email address</label>
-                            <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="username" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200" />
-                        </div>
-
-                        <div>
-                            <label for="password" class="mb-2 block text-sm font-medium text-slate-700">Password</label>
-                            <input id="password" name="password" type="password" required autocomplete="current-password" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-slate-900 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200" />
-                        </div>
-
-                        <div class="flex items-center justify-between text-sm">
-                            <label class="inline-flex items-center gap-2 text-slate-600">
-                                <input type="checkbox" name="remember" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                                Remember me
-                            </label>
-                            <a href="{{ route('password.request') }}" class="font-medium text-blue-700">Forgot password?</a>
-                        </div>
-
-                        <button type="submit" class="w-full rounded-xl bg-blue-900 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-200">
-                            Sign in
-                        </button>
-                    </form>
+                <div class="relative">
+                    <input id="password" name="password" type="password" required autocomplete="current-password" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pr-16 text-slate-900 shadow-sm transition focus:border-blue-700 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100" placeholder="Enter your password">
+                    <button type="button" data-password-toggle="password" aria-pressed="false" class="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2.5 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-slate-500 transition hover:bg-slate-200 hover:text-slate-900">Show</button>
                 </div>
             </div>
-        </div>
-    </body>
-</html>
+
+            <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+                <input type="checkbox" name="remember" class="h-4 w-4 rounded border-slate-300 text-blue-700 focus:ring-blue-500">
+                Remember me
+            </label>
+
+            <button type="submit" data-submit-button class="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-slate-900/15 transition hover:-translate-y-0.5 hover:bg-blue-900 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-wait disabled:opacity-70">
+                <span data-submit-label>Sign in</span>
+                <span data-submit-loading hidden class="inline-flex items-center justify-center gap-2" style="display:none;"><svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4Z"/></svg>Signing in...</span>
+            </button>
+        </form>
+
+        @if (Route::has('register'))
+            <p class="text-center text-sm text-slate-600">Need access? <a href="{{ route('register') }}" class="font-bold text-blue-700 transition hover:text-blue-900">Contact the administrator</a></p>
+        @endif
+    </div>
+</x-layouts.auth>

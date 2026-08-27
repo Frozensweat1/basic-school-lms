@@ -11,6 +11,7 @@
         :description="$page?->hero_subtitle ?: 'Our admissions and school office teams are ready to help with your questions.'"
         :image="$page?->hero_image_path ? Storage::disk('public')->url($page->hero_image_path) : null"
         :image-alt="$page?->hero_title ?: $branding['name']"
+        :breadcrumbs="[['label' => 'Home', 'url' => route('home')], ['label' => 'Contact']]"
     />
 
     <section class="py-16 sm:py-20 lg:py-24">
@@ -45,17 +46,17 @@
                 <div class="mt-7 grid gap-5">
                     <div>
                         <label for="contact-name" class="block text-sm font-bold text-slate-800">Your name</label>
-                        <input id="contact-name" wire:model.blur="name" autocomplete="name" class="website-field mt-2" placeholder="Enter your full name" @error('name') aria-invalid="true" aria-describedby="contact-name-error" @enderror>
+                        <input id="contact-name" wire:model="name" autocomplete="name" class="website-field mt-2" placeholder="Enter your full name" @error('name') aria-invalid="true" aria-describedby="contact-name-error" @enderror>
                         @error('name')<p id="contact-name-error" class="mt-2 text-sm font-medium text-rose-700">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label for="contact-email" class="block text-sm font-bold text-slate-800">Email address</label>
-                        <input id="contact-email" wire:model.blur="email" type="email" inputmode="email" autocomplete="email" class="website-field mt-2" placeholder="you@example.com" @error('email') aria-invalid="true" aria-describedby="contact-email-error" @enderror>
+                        <input id="contact-email" wire:model="email" type="email" inputmode="email" autocomplete="email" class="website-field mt-2" placeholder="you@example.com" @error('email') aria-invalid="true" aria-describedby="contact-email-error" @enderror>
                         @error('email')<p id="contact-email-error" class="mt-2 text-sm font-medium text-rose-700">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label for="contact-message" class="block text-sm font-bold text-slate-800">Your message</label>
-                        <textarea id="contact-message" wire:model.blur="message" rows="6" class="website-field mt-2 resize-y" placeholder="Tell us what you would like to know" @error('message') aria-invalid="true" aria-describedby="contact-message-error" @enderror></textarea>
+                        <textarea id="contact-message" wire:model="message" rows="6" class="website-field mt-2 resize-y" placeholder="Tell us what you would like to know" @error('message') aria-invalid="true" aria-describedby="contact-message-error" @enderror></textarea>
                         @error('message')<p id="contact-message-error" class="mt-2 text-sm font-medium text-rose-700">{{ $message }}</p>@enderror
                     </div>
 
@@ -82,4 +83,9 @@
             </form>
         </div>
     </section>
+
+    <x-website.newsletter-signup
+        title="Want to receive school news?"
+        description="Subscribe to our newsletter and stay updated with the latest announcements, events, and stories from {{ $branding['name'] }}."
+    />
 </div>

@@ -2,10 +2,10 @@
 
 @php
     $imageUrl = $event->featured_image_path
-        ? \Illuminate\Support\Facades\Storage::disk('public')->url($event->featured_image_path)
+        ? $event->featured_image_path
         : null;
     $href = \Illuminate\Support\Facades\Route::has('website.events.show')
-        ? route('website.events.show', ['event' => $event->slug])
+        ? route('website.events.show', ['slug' => $event->slug])
         : route('website.events');
 @endphp
 
@@ -16,8 +16,13 @@
 ]) }}>
     @if ($imageUrl)
         <a href="{{ $href }}" @class(['block shrink-0 overflow-hidden', 'w-28 sm:w-36' => $compact, 'sm:w-2/5' => ! $compact]) aria-label="View {{ $event->title }}">
-            <img src="{{ $imageUrl }}" alt="{{ $event->title }}" width="640" height="480" loading="lazy" decoding="async"
-                @class(['h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]', 'min-h-36' => $compact, 'aspect-[16/10] min-h-48 sm:aspect-auto' => ! $compact])>
+            <x-website.optimized-image
+                src="{{ $imageUrl }}"
+                alt="{{ $event->title }}"
+                width="640"
+                height="480"
+                @class(['h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]', 'min-h-36' => $compact, 'aspect-[16/10] min-h-48 sm:aspect-auto' => ! $compact])
+            />
         </a>
     @endif
     <div @class(['flex min-w-0 flex-1 flex-col', 'p-4 sm:p-5' => $compact, 'p-6' => ! $compact])>

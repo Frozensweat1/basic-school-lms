@@ -1,9 +1,7 @@
 @props(['post', 'compact' => false])
 
 @php
-    $imageUrl = $post->featured_image_path
-        ? \Illuminate\Support\Facades\Storage::disk('public')->url($post->featured_image_path)
-        : null;
+    $imageUrl = $post->featured_image_path;
     $href = \Illuminate\Support\Facades\Route::has('website.news.show')
         ? route('website.news.show', ['slug' => $post->slug])
         : route('website.news');
@@ -21,12 +19,17 @@
         'w-full' => ! $compact,
     ]) style="outline-color: var(--brand-primary)" aria-label="Read {{ $post->title }}">
         @if ($imageUrl)
-            <img src="{{ $imageUrl }}" alt="{{ $post->title }}" width="720" height="405" loading="lazy" decoding="async"
+            <x-website.optimized-image
+                src="{{ $imageUrl }}"
+                alt="{{ $post->title }}"
+                width="720"
+                height="405"
                 @class([
                     'w-full object-cover transition duration-500 group-hover:scale-[1.03]',
                     'h-full min-h-32' => $compact,
                     'aspect-[16/9]' => ! $compact,
-                ])>
+                ])
+            />
         @else
             <span @class(['flex items-end', 'h-full min-h-32 p-3' => $compact, 'aspect-[16/9] p-6' => ! $compact]) style="background: linear-gradient(135deg, var(--brand-secondary), var(--brand-primary))">
                 <span @class(['font-black uppercase text-white/80', 'text-[0.6rem] tracking-[0.12em]' => $compact, 'text-xs tracking-[0.2em]' => ! $compact])>School story</span>

@@ -37,14 +37,20 @@
     $socialImage = $socialImage ?: $image ?: $branding['logo_url'];
     $phoneHref = preg_replace('/[^+\d]/', '', (string) $branding['phone']);
     $navigation = [
-        ['label' => 'Home', 'route' => 'home'],
+        ['label' => 'Home', 'route' => 'home', 'footer' => false],
         ['label' => 'About', 'route' => 'website.about'],
         ['label' => 'Academics', 'route' => 'website.academics'],
         ['label' => 'Admissions', 'route' => 'website.admissions'],
         ['label' => 'Teachers', 'route' => 'website.teachers'],
+        ['label' => 'Testimonials', 'href' => route('home').'#testimonials', 'active_routes' => ['home']],
         ['label' => 'News', 'route' => 'website.news'],
         ['label' => 'Events', 'route' => 'website.events'],
         ['label' => 'Gallery', 'route' => 'website.gallery'],
+        ['label' => 'Contact', 'route' => 'website.contact', 'footer' => false],
+    ];
+    $utilityLinks = [
+        ['label' => 'News', 'route' => 'website.news'],
+        ['label' => 'Events', 'route' => 'website.events'],
         ['label' => 'Contact', 'route' => 'website.contact'],
     ];
     $sameAs = collect($branding['socials'])->filter()->values()->all();
@@ -117,12 +123,39 @@
         <a href="#website-main" class="website-skip-link">Skip to main content</a>
 
         <header data-website-header class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 shadow-sm shadow-slate-950/5 backdrop-blur-xl">
+            <div class="hidden border-b border-slate-200/70 bg-slate-50/70 lg:block">
+                <div class="mx-auto flex h-10 max-w-7xl items-center justify-between gap-4 px-6 lg:px-8">
+                    <div class="flex min-w-0 items-center gap-4 text-xs font-medium text-slate-600">
+                        @if ($branding['phone'])
+                            <a href="tel:{{ $phoneHref }}" class="truncate transition hover:text-slate-900">{{ $branding['phone'] }}</a>
+                        @endif
+                        @if ($branding['email'])
+                            <a href="mailto:{{ $branding['email'] }}" class="truncate transition hover:text-slate-900">{{ $branding['email'] }}</a>
+                        @endif
+                    </div>
+
+                    <nav aria-label="Utility navigation" class="flex items-center gap-4 text-xs font-semibold text-slate-600">
+                        @foreach ($utilityLinks as $item)
+                            <a href="{{ route($item['route']) }}" class="transition hover:text-slate-900">{{ $item['label'] }}</a>
+                        @endforeach
+                        <a href="{{ route('website.sitemap') }}" class="transition hover:text-slate-900">Sitemap</a>
+                    </nav>
+                </div>
+            </div>
+
             <div class="relative z-20 mx-auto flex h-18 max-w-7xl items-center justify-between gap-3 px-4 sm:h-20 sm:px-6 lg:px-8">
                 <x-website.brand-mark :branding="$branding" class="min-w-0 flex-1 xl:max-w-64" />
 
-                <nav aria-label="Primary navigation" class="hidden shrink-0 items-center gap-0.5 xl:flex">
+                <nav aria-label="Primary navigation" data-website-desktop-nav class="shrink-0 items-center gap-0.5 md:flex">
                     @foreach ($navigation as $item)
-                        <x-website.nav-link :href="route($item['route'])" :active="request()->routeIs($item['route'], $item['route'].'.*')">
+                        @php
+                            $itemHref = $item['href'] ?? route($item['route']);
+                            $activeRoutes = $item['active_routes'] ?? [$item['route'] ?? null];
+                            $isActive = collect($activeRoutes)
+                                ->filter()
+                                ->contains(fn ($activeRoute) => request()->routeIs($activeRoute, $activeRoute.'.*'));
+                        @endphp
+                        <x-website.nav-link :href="$itemHref" :active="$isActive" data-desktop-nav-item>
                             {{ $item['label'] }}
                         </x-website.nav-link>
                     @endforeach
@@ -135,7 +168,7 @@
                         {{ auth()->check() ? 'Open portal' : 'Portal login' }}
                     </a>
                     <button data-website-menu-toggle type="button"
-                        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 xl:hidden"
+                        class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 md:hidden"
                         style="outline-color: var(--brand-primary)" aria-expanded="false"
                         aria-controls="website-mobile-menu" aria-label="Open navigation">
                         <svg data-menu-icon="open" aria-hidden="true" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -148,13 +181,20 @@
                 </div>
             </div>
 
-            <div data-website-menu-backdrop class="fixed inset-0 top-18 z-0 hidden bg-slate-950/30 backdrop-blur-sm sm:top-20 xl:hidden" aria-hidden="true"></div>
+            <div data-website-menu-backdrop class="fixed inset-0 top-18 z-0 hidden bg-slate-950/30 backdrop-blur-sm sm:top-20 md:hidden" aria-hidden="true"></div>
             <nav id="website-mobile-menu" data-website-menu aria-label="Mobile navigation"
-                class="absolute inset-x-0 top-full z-10 hidden max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-slate-200 bg-white px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 shadow-2xl sm:px-6 xl:hidden"
+                class="absolute inset-x-0 top-full z-10 max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-slate-200 bg-white px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 shadow-2xl sm:px-6 md:hidden"
                 aria-hidden="true">
                 <div class="mx-auto grid max-w-7xl gap-1">
                     @foreach ($navigation as $item)
-                        <x-website.nav-link :href="route($item['route'])" :active="request()->routeIs($item['route'], $item['route'].'.*')" mobile>
+                        @php
+                            $itemHref = $item['href'] ?? route($item['route']);
+                            $activeRoutes = $item['active_routes'] ?? [$item['route'] ?? null];
+                            $isActive = collect($activeRoutes)
+                                ->filter()
+                                ->contains(fn ($activeRoute) => request()->routeIs($activeRoute, $activeRoute.'.*'));
+                        @endphp
+                        <x-website.nav-link :href="$itemHref" :active="$isActive" mobile>
                             {{ $item['label'] }}
                         </x-website.nav-link>
                     @endforeach
@@ -163,6 +203,9 @@
                         class="inline-flex min-h-12 items-center justify-center rounded-xl px-5 text-sm font-bold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                         style="background-color: var(--brand-primary); outline-color: var(--brand-primary)">
                         {{ auth()->check() ? 'Open learning portal' : 'Sign in to the portal' }}
+                    </a>
+                    <a href="{{ route('website.sitemap') }}" class="mt-2 inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                        View sitemap
                     </a>
                     <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 px-2 text-sm text-slate-600">
                         @if ($branding['phone'])

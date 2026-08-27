@@ -93,8 +93,7 @@
                         <th class="px-5 py-3">Schedule</th>
                         <th class="px-5 py-3">Teacher</th>
                         <th class="px-5 py-3">Status</th>
-                        <th class="px-5 py-3 text-right">Actions</th>
-                    </tr>
+                        <th class="px-5 py-3 text-right">Actions</th>                    </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse ($examinations as $examination)
@@ -124,6 +123,26 @@
                             <td class="px-5 py-4">
                                 <div class="flex justify-end gap-2">
                                     @can('update', $examination)
+                                        @php
+                                            $questionsRoute = auth()->user()->hasRole('teacher') && !auth()->user()->hasAnyRole(['super_admin','school_admin'])
+                                                ? (Route::has('lms.examinations.teacher.questions.index') ? route('lms.examinations.teacher.questions.index', $examination) : null)
+                                                : (Route::has('lms.examinations.admin.questions.index') ? route('lms.examinations.admin.questions.index', $examination) : null);
+                                            $scoresRoute = auth()->user()->hasRole('teacher') && !auth()->user()->hasAnyRole(['super_admin','school_admin'])
+                                                ? (Route::has('lms.examinations.teacher.scores.index') ? route('lms.examinations.teacher.scores.index', $examination) : null)
+                                                : (Route::has('lms.examinations.admin.scores.index') ? route('lms.examinations.admin.scores.index', $examination) : null);
+                                        @endphp
+                                        @if($questionsRoute)
+                                            <a href="{{ $questionsRoute }}" class="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none" title="Manage exam questions">
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4h8M4 7h8M4 10h5" stroke-linecap="round"></path><rect x="1" y="1" width="14" height="14" rx="2"></rect></svg>
+                                                Questions
+                                            </a>
+                                        @endif
+                                        @if($scoresRoute)
+                                            <a href="{{ $scoresRoute }}" class="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 focus:outline-none" title="Grade students">
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 8 4 4 6-6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                                Grade
+                                            </a>
+                                        @endif
                                         <x-ui.icon-button wire:click="edit({{ $examination->id }})" icon="edit" label="Edit {{ $examination->title }}" target="edit({{ $examination->id }})" />
                                     @endcan
                                     @can('delete', $examination)

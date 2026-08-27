@@ -19,7 +19,8 @@ function initialiseWebsiteShell() {
     const toggle = document.querySelector('[data-website-menu-toggle]');
     const menu = document.querySelector('[data-website-menu]');
     const backdrop = document.querySelector('[data-website-menu-backdrop]');
-    const desktopMedia = window.matchMedia('(min-width: 1280px)');
+    const desktopMedia = window.matchMedia('(min-width: 768px)');
+    const desktopNav = document.querySelector('[data-website-desktop-nav]');
 
     if (toggle && menu && backdrop) {
         const openIcon = toggle.querySelector('[data-menu-icon="open"]');
@@ -84,6 +85,43 @@ function initialiseWebsiteShell() {
         }, { signal });
 
         setMenuOpen(false, false);
+    }
+
+    if (desktopNav) {
+        const desktopNavItems = () => [...desktopNav.querySelectorAll('[data-desktop-nav-item]')]
+            .filter((item) => !item.hidden && item.offsetParent !== null);
+
+        const focusNavItem = (targetIndex) => {
+            const items = desktopNavItems();
+            if (!items.length) return;
+
+            const index = (targetIndex + items.length) % items.length;
+            items[index].focus({ preventScroll: true });
+        };
+
+        desktopNav.addEventListener('keydown', (event) => {
+            if (!desktopMedia.matches) return;
+            if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+
+            const items = desktopNavItems();
+            const currentIndex = items.findIndex((item) => item === document.activeElement);
+            if (currentIndex < 0) return;
+
+            event.preventDefault();
+
+            if (event.key === 'Home') {
+                focusNavItem(0);
+                return;
+            }
+
+            if (event.key === 'End') {
+                focusNavItem(items.length - 1);
+                return;
+            }
+
+            const direction = event.key === 'ArrowRight' ? 1 : -1;
+            focusNavItem(currentIndex + direction);
+        }, { signal });
     }
 
     initialiseGalleryLightbox(signal);

@@ -26,6 +26,10 @@ use App\Livewire\LMS\Dashboard\Teacher as TeacherDashboard;
 use App\Livewire\LMS\Dashboard\Student as StudentDashboard;
 use App\Livewire\LMS\Dashboard\ParentDashboard;
 use App\Livewire\LMS\Examinations\Index as ExaminationsIndex;
+use App\Livewire\LMS\Examinations\Questions\AdminIndex as AdminExamQuestionsIndex;
+use App\Livewire\LMS\Examinations\Questions\TeacherIndex as TeacherExamQuestionsIndex;
+use App\Livewire\LMS\Examinations\Scores\AdminIndex as AdminExamScoresIndex;
+use App\Livewire\LMS\Examinations\Scores\TeacherIndex as TeacherExamScoresIndex;
 use App\Livewire\LMS\Examinations\Student\Index as StudentExaminationsIndex;
 use App\Livewire\LMS\Examinations\Parent\Index as ParentExaminationsIndex;
 use App\Livewire\LMS\Lessons\Admin\Index as AdminLessonsIndex;
@@ -33,6 +37,7 @@ use App\Livewire\LMS\Lessons\Teacher\Index as TeacherLessonsIndex;
 use App\Livewire\LMS\Lessons\Student\Index as StudentLessonsIndex;
 use App\Livewire\LMS\Lessons\Parent\Index as ParentLessonsIndex;
 use App\Livewire\LMS\Notifications\Index as NotificationsIndex;
+use App\Livewire\LMS\Profile\Index as ProfileIndex;
 use App\Livewire\LMS\Parents\Index as ParentsIndex;
 use App\Livewire\LMS\Permissions\Index as PermissionsIndex;
 use App\Livewire\LMS\Quizzes\Admin\Index as AdminQuizzesIndex;
@@ -86,6 +91,9 @@ use App\Livewire\LMS\Website\Pages\Index as WebsitePagesIndex;
 use App\Livewire\LMS\Website\Inquiries\Index as WebsiteInquiriesIndex;
 use App\Livewire\LMS\Website\Teachers\Index as WebsiteTeachersIndex;
 use App\Livewire\LMS\Website\Gallery\Albums as WebsiteGalleryAlbums;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SitemapController;
 
@@ -107,7 +115,7 @@ Route::get('/contact', WebsiteContact::class)->name('website.contact');
 Route::get('/sitemap.xml', SitemapController::class)->name('website.sitemap');
 
 Route::middleware(['auth'])->group(function () {
-    Route::view('/lms/profile', 'profile.edit')->name('lms.profile.edit');
+    Route::get('/lms/profile', ProfileIndex::class)->name('lms.profile.edit');
 
     // Public website CMS (restricted to users with the website permission)
     Route::middleware('can:manage website content')->group(function (): void {
@@ -126,7 +134,23 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/lms/student/dashboard', StudentDashboard::class)->name('lms.dashboard.student');
     Route::get('/lms/parent/dashboard', ParentDashboard::class)->name('lms.dashboard.parent');
     Route::get('/lms/dashboard', function () {
-        $route = auth()->user()->hasRole('teacher') ? 'lms.dashboard.teacher' : (auth()->user()->hasRole('student') ? 'lms.dashboard.student' : (auth()->user()->hasRole('parent') ? 'lms.dashboard.parent' : 'lms.dashboard.admin'));
+        $user = Auth::user();
+        abort_unless($user instanceof User, 403);
+
+        $roles = DB::table('model_has_roles')
+            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+            ->where('model_has_roles.model_type', User::class)
+            ->where('model_has_roles.model_id', $user->id)
+            ->pluck('roles.name')
+            ->all();
+
+        $route = in_array('teacher', $roles, true)
+            ? 'lms.dashboard.teacher'
+            : (in_array('student', $roles, true)
+                ? 'lms.dashboard.student'
+                : (in_array('parent', $roles, true)
+                    ? 'lms.dashboard.parent'
+                    : 'lms.dashboard.admin'));
         return redirect()->route($route);
     })->name('lms.dashboard');
 
@@ -217,6 +241,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('lms.quizzes.teacher.questions.index');
     Route::get('/lms/questions', QuestionsIndex::class)->middleware('can:viewAny,App\\Models\\Question')->name('lms.questions.index');
     
+    Route::get('/lms/admin/examinations', ExaminationsIndex::class)
+        ->middleware('can:viewAny,App\\Models\\Examination')
+        ->name('lms.examinations.admin.index');
+    Route::get('/lms/teacher/examinations', ExaminationsIndex::class)
+        ->middleware('can:viewAny,App\\Models\\Examination')
+        ->name('lms.examinations.teacher.index');
     Route::get('/lms/examinations', ExaminationsIndex::class)
         ->middleware('can:viewAny,App\\Models\\Examination')
         ->name('lms.examinations.index');
@@ -224,6 +254,19 @@ Route::middleware(['auth'])->group(function () {
         ->name('lms.examinations.student.index');
     Route::get('/lms/parent/examinations', ParentExaminationsIndex::class)
         ->name('lms.examinations.parent.index');
+
+    Route::get('/lms/admin/examinations/{examination}/questions', AdminExamQuestionsIndex::class)
+        ->middleware('can:update,examination')
+        ->name('lms.examinations.admin.questions.index');
+    Route::get('/lms/teacher/examinations/{examination}/questions', TeacherExamQuestionsIndex::class)
+        ->middleware('can:update,examination')
+        ->name('lms.examinations.teacher.questions.index');
+    Route::get('/lms/admin/examinations/{examination}/scores', AdminExamScoresIndex::class)
+        ->middleware('can:update,examination')
+        ->name('lms.examinations.admin.scores.index');
+    Route::get('/lms/teacher/examinations/{examination}/scores', TeacherExamScoresIndex::class)
+        ->middleware('can:update,examination')
+        ->name('lms.examinations.teacher.scores.index');
     
     Route::get('/lms/admin/assessments', AdminAssessmentsIndex::class)
         ->middleware('can:viewAny,App\\Models\\Assessment')

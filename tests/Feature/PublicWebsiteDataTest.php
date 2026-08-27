@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Livewire\Website\Contact;
 use App\Livewire\Website\Gallery;
 use App\Livewire\Website\HomePage;
+use App\Livewire\Website\NewsletterSignup;
 use App\Livewire\Website\Teachers;
+use App\Models\NewsletterSubscription;
 use App\Models\School;
 use App\Models\Student;
 use App\Models\Teacher;
@@ -151,6 +153,21 @@ class PublicWebsiteDataTest extends TestCase
             ->assertSet('retryAfterSeconds', fn (int $seconds): bool => $seconds > 0);
 
         $this->assertSame(5, WebsiteInquiry::query()->count());
+    }
+
+    public function test_newsletter_subscription_and_contact_breadcrumbs_work(): void
+    {
+        Livewire::test(NewsletterSignup::class)
+            ->set('newsletterEmail', 'family@example.com')
+            ->call('subscribeNewsletter')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('newsletter_subscriptions', ['email' => 'family@example.com']);
+
+        $this->get(route('website.contact'))
+            ->assertOk()
+            ->assertSee('Home')
+            ->assertSee('Contact');
     }
 
     public function test_only_published_news_slugs_are_publicly_resolvable(): void

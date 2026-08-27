@@ -88,10 +88,10 @@
     @endif
 
     @php
-        $filtersActive = filled($search) || filled($filterStatus) || filled($filterGender) || filled($filterClassId);
+        $filtersActive = filled($search) || filled($filterStatus) || filled($filterGender) || filled($filterClassId) || $sortBy !== 'latest' || (int) $perPage !== 15;
     @endphp
     <div class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
-        <div class="grid w-full gap-3 sm:grid-cols-2 xl:max-w-5xl xl:grid-cols-[minmax(16rem,1fr)_10rem_10rem_13rem]">
+        <div class="grid w-full gap-3 sm:grid-cols-2 xl:max-w-6xl xl:grid-cols-[minmax(16rem,1fr)_10rem_10rem_13rem_11rem_8rem]">
             <div class="relative sm:col-span-2 xl:col-span-1">
                 <label for="student-search" class="sr-only">Search students</label>
                 <svg class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -131,6 +131,21 @@
                     <option value="{{ $class->id }}">{{ $class->name }}{{ $class->stream ? ' — ' . $class->stream->name : '' }}</option>
                 @endforeach
             </select>
+
+            <select wire:model.live="sortBy" aria-label="Sort students" class="rounded-xl border-slate-300 text-sm shadow-sm focus:border-blue-700 focus:ring-blue-700">
+                <option value="latest">Sort: Latest added</option>
+                <option value="name_asc">Sort: Name (A-Z)</option>
+                <option value="name_desc">Sort: Name (Z-A)</option>
+                <option value="admission_latest">Sort: Admission date (newest)</option>
+                <option value="admission_oldest">Sort: Admission date (oldest)</option>
+            </select>
+
+            <select wire:model.live="perPage" aria-label="Students per page" class="rounded-xl border-slate-300 text-sm shadow-sm focus:border-blue-700 focus:ring-blue-700">
+                <option value="10">10 per page</option>
+                <option value="15">15 per page</option>
+                <option value="25">25 per page</option>
+                <option value="50">50 per page</option>
+            </select>
         </div>
 
         <div class="flex shrink-0 items-center gap-3">
@@ -138,8 +153,8 @@
                 <x-button wire:click="clearFilters" variant="ghost" size="sm" target="clearFilters" :loading="true">Clear filters</x-button>
             @endif
             <p class="whitespace-nowrap text-sm text-slate-500" aria-live="polite">
-                <span wire:loading.remove wire:target="search,filterStatus,filterGender,filterClassId">{{ $students->total() }} {{ \Illuminate\Support\Str::plural('student', $students->total()) }}</span>
-                <span wire:loading wire:target="search,filterStatus,filterGender,filterClassId">Updating…</span>
+                <span wire:loading.remove wire:target="search,filterStatus,filterGender,filterClassId,sortBy,perPage">{{ $students->total() }} {{ \Illuminate\Support\Str::plural('student', $students->total()) }}</span>
+                <span wire:loading wire:target="search,filterStatus,filterGender,filterClassId,sortBy,perPage">Updating…</span>
             </p>
         </div>
     </div>

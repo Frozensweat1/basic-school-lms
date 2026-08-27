@@ -113,6 +113,7 @@
             @if ($slug === 'home')
                 @include('livewire.lms.website.pages._repeater', ['collection' => 'stats', 'title' => 'Homepage statistics', 'addLabel' => 'Add statistic', 'rows' => $stats])
                 @include('livewire.lms.website.pages._repeater', ['collection' => 'programs', 'title' => 'Featured programmes', 'addLabel' => 'Add programme', 'rows' => $programs])
+                @include('livewire.lms.website.pages._testimonials_repeater')
             @elseif ($slug === 'about')
                 <section class="grid gap-4 border-t border-slate-200 pt-6 sm:grid-cols-2">
                     <div><label for="mission" class="block text-sm font-semibold text-slate-900">Mission</label><textarea id="mission" wire:model.blur="mission" rows="4" class="mt-2 w-full rounded-lg border-slate-300"></textarea>@error('mission')<p class="mt-1 text-sm text-rose-700">{{ $message }}</p>@enderror</div>

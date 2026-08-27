@@ -15,6 +15,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -36,10 +37,23 @@ class Index extends Component
     public ?int $editingId = null;
     public ?int $deletingId = null;
 
+    #[Url(as: 'q', except: '')]
     public string $search = '';
+
+    #[Url(as: 'status', except: '')]
     public string $filterStatus = '';
+
+    #[Url(as: 'gender', except: '')]
     public string $filterGender = '';
+
+    #[Url(as: 'class', except: '')]
     public string $filterClassId = '';
+
+    #[Url(as: 'sort', except: 'latest')]
+    public string $sortBy = 'latest';
+
+    #[Url(as: 'per_page', except: 15)]
+    public int $perPage = 15;
 
     public string $studentId = '';
     public string $admissionNumber = '';
@@ -110,6 +124,28 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatedSortBy(): void
+    {
+        $allowed = ['latest', 'name_asc', 'name_desc', 'admission_latest', 'admission_oldest'];
+
+        if (! in_array($this->sortBy, $allowed, true)) {
+            $this->sortBy = 'latest';
+        }
+
+        $this->resetPage();
+    }
+
+    public function updatedPerPage(): void
+    {
+        $allowed = [10, 15, 25, 50];
+
+        if (! in_array($this->perPage, $allowed, true)) {
+            $this->perPage = 15;
+        }
+
+        $this->resetPage();
+    }
+
     public function updatedImportFile(): void
     {
         $this->importErrors = [];
@@ -118,7 +154,9 @@ class Index extends Component
 
     public function clearFilters(): void
     {
-        $this->reset(['search', 'filterStatus', 'filterGender', 'filterClassId']);
+        $this->reset(['search', 'filterStatus', 'filterGender', 'filterClassId', 'sortBy', 'perPage']);
+        $this->sortBy = 'latest';
+        $this->perPage = 15;
         $this->resetPage();
     }
 
@@ -680,9 +718,9 @@ class Index extends Component
     {
         $schoolId = $this->schoolId();
         $search = trim($this->search);
+        $perPage = in_array($this->perPage, [10, 15, 25, 50], true) ? $this->perPage : 15;
 
-        return view('livewire.lms.students.index', [
-            'students' => Student::query()
+        $students = Student::query()
                 ->where('school_id', $schoolId)
                 ->with([
                     'enrollments' => fn ($enrollments) => $enrollments
@@ -703,9 +741,18 @@ class Index extends Component
                 ->when(filled($this->filterGender), fn ($query) => $query->where('gender', $this->filterGender))
                 ->when(filled($this->filterClassId), fn ($query) => $query->whereHas('enrollments', fn ($enrollments) => $enrollments
                     ->where('status', 'active')
-                    ->where('school_class_id', $this->filterClassId)))
-                ->latest()
-                ->paginate(15),
+                    ->where('school_class_id', $this->filterClassId)));
+
+        match ($this->sortBy) {
+            'name_asc' => $students->orderBy('first_name')->orderBy('last_name'),
+            'name_desc' => $students->orderByDesc('first_name')->orderByDesc('last_name'),
+            'admission_latest' => $students->orderByDesc('admission_date')->orderByDesc('created_at'),
+            'admission_oldest' => $students->orderBy('admission_date')->orderBy('created_at'),
+            default => $students->latest(),
+        };
+
+        return view('livewire.lms.students.index', [
+            'students' => $students->paginate($perPage),
             'classes' => $this->schoolClassesQuery($schoolId)
                 ->with('stream')
                 ->where('status', 'active')

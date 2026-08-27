@@ -303,6 +303,24 @@ a {
     scroll-margin-top: 6rem;
 }
 
+.website-shell [data-website-desktop-nav] {
+    display: none !important;
+}
+
+.website-shell [data-website-menu-toggle] {
+    display: inline-flex !important;
+}
+
+@media (min-width: 768px) {
+    .website-shell [data-website-desktop-nav] {
+        display: flex !important;
+    }
+
+    .website-shell [data-website-menu-toggle] {
+        display: none !important;
+    }
+}
+
 .website-skip-link {
     position: fixed;
     top: max(0.75rem, env(safe-area-inset-top));

@@ -4,6 +4,7 @@ namespace App\Livewire\LMS\Website\Pages;
 
 use App\Models\WebsitePage;
 use App\Support\ContentSanitizer;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
@@ -31,6 +32,9 @@ class Index extends Component
     public string $currentHeroImagePath = '';
     public array $stats = [];
     public array $programs = [];
+    public array $testimonials = [];
+    public array $testimonialAvatars = [];
+    public array $removeTestimonialAvatars = [];
     public array $values = [];
     public array $approach = [];
     public array $steps = [];
@@ -58,6 +62,9 @@ class Index extends Component
         $this->vision = (string) ($content['vision'] ?? '');
         $this->stats = $this->statRows($page->stats);
         $this->programs = $this->cardRows($page->programs);
+        $this->testimonials = $this->testimonialRows($content['testimonials'] ?? []);
+        $this->testimonialAvatars = [];
+        $this->removeTestimonialAvatars = array_fill(0, count($this->testimonials), false);
         $this->values = $this->cardRows($content['values'] ?? []);
         $this->approach = $this->cardRows($content['approach'] ?? []);
         $this->steps = $this->textRows($content['steps'] ?? []);
@@ -78,6 +85,13 @@ class Index extends Component
             return;
         }
 
+        if ($collection === 'testimonials') {
+            $this->testimonials[] = ['author' => '', 'role' => '', 'text' => '', 'rating' => 5];
+            $this->removeTestimonialAvatars[] = false;
+
+            return;
+        }
+
         if (in_array($collection, ['steps', 'requirements'], true)) {
             $this->{$collection}[] = '';
         }
@@ -87,12 +101,18 @@ class Index extends Component
     {
         $this->guard();
 
-        if (! in_array($collection, ['stats', 'programs', 'values', 'approach', 'steps', 'requirements'], true)) {
+        if (! in_array($collection, ['stats', 'programs', 'testimonials', 'values', 'approach', 'steps', 'requirements'], true)) {
             return;
         }
 
         unset($this->{$collection}[$index]);
         $this->{$collection} = array_values($this->{$collection});
+
+        if ($collection === 'testimonials') {
+            unset($this->testimonialAvatars[$index], $this->removeTestimonialAvatars[$index]);
+            $this->testimonialAvatars = array_values($this->testimonialAvatars);
+            $this->removeTestimonialAvatars = array_values($this->removeTestimonialAvatars);
+        }
     }
 
     public function save(): void
@@ -142,9 +162,15 @@ class Index extends Component
             if ($page->slug === 'home') {
                 $payload['stats'] = $this->cleanStatRows($data['stats'] ?? []);
                 $payload['programs'] = $this->cleanCardRows($data['programs'] ?? []);
+                $content['testimonials'] = $this->cleanTestimonialRows(
+                    $data['testimonials'] ?? [],
+                    $existingContent['testimonials'] ?? []
+                );
             } elseif ($page->slug === 'academics') {
                 $payload['programs'] = $this->cleanCardRows($data['programs'] ?? []);
             }
+
+            $payload['content'] = $content;
 
             $page->update($payload);
 
@@ -202,6 +228,15 @@ class Index extends Component
                 'programs' => ['array', 'max:12'],
                 'programs.*.title' => ['required', 'string', 'max:150'],
                 'programs.*.description' => ['nullable', 'string', 'max:1000'],
+                'testimonials' => ['array', 'max:12'],
+                'testimonials.*.author' => ['required', 'string', 'max:120'],
+                'testimonials.*.role' => ['nullable', 'string', 'max:150'],
+                'testimonials.*.text' => ['required', 'string', 'max:1200'],
+                'testimonials.*.rating' => ['nullable', 'integer', 'min:1', 'max:5'],
+                'testimonialAvatars' => ['array'],
+                'testimonialAvatars.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
+                'removeTestimonialAvatars' => ['array'],
+                'removeTestimonialAvatars.*' => ['boolean'],
             ];
         } elseif ($slug === 'about') {
             $rules += [
@@ -236,8 +271,8 @@ class Index extends Component
     {
         $this->reset([
             'editingId', 'slug', 'heroTitle', 'heroSubtitle', 'contentBody', 'mission', 'vision',
-            'currentHeroImagePath', 'stats', 'programs', 'values', 'approach', 'steps',
-            'requirements', 'heroImage', 'removeHeroImage',
+            'currentHeroImagePath', 'stats', 'programs', 'testimonials', 'values', 'approach', 'steps',
+            'requirements', 'heroImage', 'removeHeroImage', 'testimonialAvatars', 'removeTestimonialAvatars',
         ]);
         $this->resetValidation();
     }
@@ -275,6 +310,21 @@ class Index extends Component
             ->all();
     }
 
+    private function testimonialRows(mixed $rows): array
+    {
+        return collect(is_array($rows) ? $rows : [])
+            ->filter(fn ($row) => is_array($row))
+            ->map(fn ($row) => [
+                'author' => (string) ($row['author'] ?? ''),
+                'role' => (string) ($row['role'] ?? ''),
+                'text' => (string) ($row['text'] ?? ''),
+                'rating' => max(1, min(5, (int) ($row['rating'] ?? 5))),
+                'avatar' => (string) ($row['avatar'] ?? ''),
+            ])
+            ->values()
+            ->all();
+    }
+
     private function cleanCardRows(array $rows): array
     {
         return collect($rows)
@@ -306,5 +356,58 @@ class Index extends Component
             ->filter()
             ->values()
             ->all();
+    }
+
+    private function cleanTestimonialRows(array $rows, array $existingRows = []): array
+    {
+        $cleaned = [];
+
+        foreach ($rows as $index => $row) {
+            $author = trim((string) ($row['author'] ?? ''));
+            $text = trim((string) ($row['text'] ?? ''));
+
+            if ($author === '' || $text === '') {
+                continue;
+            }
+
+            $existingAvatar = trim((string) ($existingRows[$index]['avatar'] ?? ''));
+            $avatar = $existingAvatar;
+            $removeAvatar = (bool) ($this->removeTestimonialAvatars[$index] ?? false);
+
+            if ($removeAvatar && $avatar !== '' && $this->isStoredPublicPath($avatar)) {
+                Storage::disk('public')->delete($avatar);
+                $avatar = '';
+            }
+
+            if (isset($this->testimonialAvatars[$index]) && $this->testimonialAvatars[$index]) {
+                $newAvatar = $this->testimonialAvatars[$index]->store('website/testimonials', 'public');
+
+                if ($avatar !== '' && $avatar !== $newAvatar && $this->isStoredPublicPath($avatar)) {
+                    Storage::disk('public')->delete($avatar);
+                }
+
+                $avatar = $newAvatar;
+            }
+
+            $testimonial = [
+                'author' => $author,
+                'role' => trim((string) ($row['role'] ?? '')),
+                'text' => $text,
+                'rating' => max(1, min(5, (int) ($row['rating'] ?? 5))),
+            ];
+
+            if ($avatar !== '') {
+                $testimonial['avatar'] = $avatar;
+            }
+
+            $cleaned[] = $testimonial;
+        }
+
+        return $cleaned;
+    }
+
+    private function isStoredPublicPath(string $value): bool
+    {
+        return ! Str::startsWith($value, ['http://', 'https://']);
     }
 }

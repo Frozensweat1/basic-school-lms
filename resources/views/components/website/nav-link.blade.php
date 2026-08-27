@@ -4,7 +4,7 @@
     'mobile' => false,
 ])
 
-<a href="{{ $href }}" @if ($active) aria-current="page" @endif
+<a href="{{ $href }}" wire:navigate @if ($active) aria-current="page" @endif
     {{ $attributes->class([
         'font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
         'flex min-h-12 items-center justify-between rounded-xl px-4 text-base' => $mobile,

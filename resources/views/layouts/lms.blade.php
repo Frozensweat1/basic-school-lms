@@ -2,6 +2,44 @@
     $branding = app(\App\Support\SchoolBranding::class)->forLms();
     $pageTitle = app(\App\Support\LmsPage::class)->title();
     $unreadNotificationCount = auth()->user()->unreadNotifications()->count();
+    $currentRouteName = request()->route()?->getName() ?? '';
+    $lmsSection = match (true) {
+        str_starts_with($currentRouteName, 'lms.dashboard') => 'Main',
+        str_starts_with($currentRouteName, 'lms.profile') => 'Main',
+        str_starts_with($currentRouteName, 'lms.academic-years'),
+        str_starts_with($currentRouteName, 'lms.terms'),
+        str_starts_with($currentRouteName, 'lms.classes'),
+        str_starts_with($currentRouteName, 'lms.streams'),
+        str_starts_with($currentRouteName, 'lms.subjects'),
+        str_starts_with($currentRouteName, 'lms.class-subjects') => 'Academic Setup',
+        str_starts_with($currentRouteName, 'lms.students'),
+        str_starts_with($currentRouteName, 'lms.teachers'),
+        str_starts_with($currentRouteName, 'lms.parents') => 'People',
+        str_starts_with($currentRouteName, 'lms.lessons'),
+        str_starts_with($currentRouteName, 'lms.topics') => 'Learning',
+        str_starts_with($currentRouteName, 'lms.assignments'),
+        str_starts_with($currentRouteName, 'lms.quizzes'),
+        str_starts_with($currentRouteName, 'lms.questions'),
+        str_starts_with($currentRouteName, 'lms.examinations'),
+        str_starts_with($currentRouteName, 'lms.assessments'),
+        str_starts_with($currentRouteName, 'lms.assessment-components'),
+        str_starts_with($currentRouteName, 'lms.grading-scales'),
+        str_starts_with($currentRouteName, 'lms.results') => 'Assessments',
+        str_starts_with($currentRouteName, 'lms.attendance'),
+        str_starts_with($currentRouteName, 'lms.timetables'),
+        str_starts_with($currentRouteName, 'lms.schedule-periods'),
+        str_starts_with($currentRouteName, 'lms.reports') => 'Records',
+        str_starts_with($currentRouteName, 'lms.announcements'),
+        str_starts_with($currentRouteName, 'lms.notifications') => 'Communication',
+        str_starts_with($currentRouteName, 'lms.users'),
+        str_starts_with($currentRouteName, 'lms.roles'),
+        str_starts_with($currentRouteName, 'lms.permissions'),
+        str_starts_with($currentRouteName, 'lms.audit-logs'),
+        str_starts_with($currentRouteName, 'lms.school-setup'),
+        str_starts_with($currentRouteName, 'lms.settings') => 'Administration',
+        str_starts_with($currentRouteName, 'lms.website.') => 'Public Website',
+        default => 'LMS',
+    };
     $headerRole = str(auth()->user()->roles->first()?->name ?? 'user')->replace('_', ' ')->title();
     $userInitials = str(auth()->user()->name)
         ->trim()
@@ -58,6 +96,15 @@
                                 <p class="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 sm:text-xs">
                                     <span class="hidden sm:inline">Learning management system</span>
                                     <span class="sm:hidden">LMS</span>
+                                </p>
+                                <p class="mt-1 hidden items-center gap-2 truncate text-xs text-slate-500 dark:text-slate-400 sm:inline-flex">
+                                    <a href="{{ route('lms.dashboard') }}" class="hover:text-slate-700 dark:hover:text-slate-200">Dashboard</a>
+                                    <span aria-hidden="true">/</span>
+                                    <span>{{ $lmsSection }}</span>
+                                    @if ($pageTitle !== $lmsSection)
+                                        <span aria-hidden="true">/</span>
+                                        <span class="truncate text-slate-600 dark:text-slate-300">{{ $pageTitle }}</span>
+                                    @endif
                                 </p>
                                 <h1 class="truncate text-lg font-bold leading-tight text-slate-900 dark:text-white sm:text-xl">{{ $pageTitle }}</h1>
                             </div>

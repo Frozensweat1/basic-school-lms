@@ -17,13 +17,53 @@
             <div class="grid overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-900/5 sm:grid-cols-3">
                 @foreach ($stats as $label => $value)
                     <div class="px-6 py-7 text-center sm:border-r sm:border-slate-200 sm:last:border-r-0">
-                        <p class="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">{{ $value }}</p>
+                        <p class="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl" data-count="{{ $value }}" data-decimals="0">0</p>
                         <p class="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{{ $label }}</p>
                     </div>
                 @endforeach
             </div>
         </div>
     </section>
+
+    <script>
+        const animateCounters = () => {
+            document.querySelectorAll('[data-count]').forEach((element) => {
+                const target = parseInt(element.dataset.count);
+                const decimals = parseInt(element.dataset.decimals) || 0;
+                let current = 0;
+                const increment = Math.ceil(target / 60);
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            const timer = setInterval(() => {
+                                current += increment;
+                                if (current >= target) {
+                                    current = target;
+                                    clearInterval(timer);
+                                }
+
+                                element.textContent = current.toLocaleString('en-US', {
+                                    minimumFractionDigits: decimals,
+                                    maximumFractionDigits: decimals,
+                                });
+                            }, 16);
+
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                });
+
+                observer.observe(element);
+            });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', animateCounters);
+        } else {
+            animateCounters();
+        }
+    </script>
 
     <section class="bg-slate-50 py-16 sm:py-20 lg:py-24">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -92,6 +132,13 @@
         </div>
     </section>
 
+    <x-website.testimonials
+        id="testimonials"
+        :testimonials="$testimonials"
+        title="Families trust the BrightStar journey"
+        class="bg-slate-50"
+    />
+
     <x-website.cta
         eyebrow="Start the conversation"
         title="Could this be the right school for your family?"
@@ -101,4 +148,6 @@
         :secondary-action="route('website.admissions')"
         secondary-action-label="How to apply"
     />
+
+    <x-website.newsletter-signup />
 </div>

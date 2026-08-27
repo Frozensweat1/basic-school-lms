@@ -73,7 +73,12 @@
                 <input id="assessment-score-search" type="search" wire:model.live.debounce.300ms="search" placeholder="Search by student name, ID, or admission number" autocomplete="off" class="w-full rounded-xl border-slate-300 py-2.5 pl-10 pr-24 text-sm shadow-sm transition focus:border-blue-700 focus:ring-blue-700">
                 <span wire:loading wire:target="search" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-500">Searching…</span>
             </div>
-            <p class="shrink-0 text-sm text-slate-500" aria-live="polite">{{ $students->count() }} of {{ $allStudentCount }} students</p>
+            <div class="flex shrink-0 items-center gap-3">
+                <p class="text-sm text-slate-500" aria-live="polite">{{ $students->count() }} of {{ $allStudentCount }} students</p>
+                @if ($assessment->status !== 'locked')
+                    <x-button type="button" wire:click="bulkGrade" variant="primary" icon="check" target="bulkGrade" :loading="true">Bulk grade all</x-button>
+                @endif
+            </div>
         </div>
 
         @error('locked')
@@ -89,6 +94,7 @@
                         <th class="px-5 py-3">Percentage</th>
                         <th class="px-5 py-3">Grade</th>
                         <th class="px-5 py-3">Comment</th>
+                        <th class="px-5 py-3 text-right">Action</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -100,28 +106,49 @@
                                 ? null
                                 : ((float) $score / (float) $assessment->max_score) * 100;
                             $grade = $this->gradeFor($score, $scales);
+                            $isGraded = in_array((int) $studentId, $gradedStudentIds, true);
                         @endphp
-                        <tr wire:key="assessment-student-{{ $studentId }}" class="hover:bg-slate-50/80">
+                        <tr wire:key="assessment-student-{{ $studentId }}" class="hover:bg-slate-50/80 @if($isGraded) bg-emerald-50/30 @endif">
                             <td class="px-5 py-4">
-                                <p class="font-semibold text-slate-900">{{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}</p>
-                                <p class="mt-1 text-xs text-slate-500">{{ $enrollment->student->student_id }} · {{ $enrollment->student->admission_number }}</p>
+                                <div class="flex items-center gap-2">
+                                    @if($isGraded)
+                                        <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100" title="Graded">
+                                            <svg class="h-3 w-3 text-emerald-700" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m2 6 3 3 5-5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                        </span>
+                                    @endif
+                                    <div>
+                                        <p class="font-semibold text-slate-900">{{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}</p>
+                                        <p class="mt-0.5 text-xs text-slate-500">{{ $enrollment->student->student_id }} · {{ $enrollment->student->admission_number }}</p>
+                                    </div>
+                                </div>
                             </td>
                             <td class="px-5 py-4">
                                 <label for="score-{{ $studentId }}" class="sr-only">Score for {{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}</label>
-                                <input wire:model.blur="scores.{{ $studentId }}" id="score-{{ $studentId }}" type="number" min="0" max="{{ $assessment->max_score }}" step="0.01" @disabled($assessment->status === 'locked') class="w-28 rounded-xl border-slate-300 text-sm shadow-sm focus:border-blue-700 focus:ring-blue-700 disabled:cursor-not-allowed disabled:bg-slate-100">
+                                <input wire:model.blur="scores.{{ $studentId }}" id="score-{{ $studentId }}" type="number" min="0" max="{{ $assessment->max_score }}" step="0.01" @disabled($assessment->status === 'locked') class="w-28 rounded-xl border-slate-300 text-sm shadow-sm focus:border-blue-700 focus:ring-blue-700 disabled:cursor-not-allowed disabled:bg-slate-100 @if($isGraded) border-emerald-300 @endif">
                                 @error("scores.$studentId") <p class="mt-1 max-w-36 text-xs text-rose-700">{{ $message }}</p> @enderror
                             </td>
                             <td class="px-5 py-4 font-medium text-slate-700">{{ $percentage === null ? '—' : number_format($percentage, 1).'%' }}</td>
-                            <td class="px-5 py-4"><span class="inline-flex min-w-9 justify-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{{ $grade ?: '—' }}</span></td>
+                            <td class="px-5 py-4">
+                                <span class="inline-flex min-w-9 justify-center rounded-full px-2.5 py-1 text-xs font-semibold @if($grade) bg-blue-100 text-blue-800 @else bg-slate-100 text-slate-700 @endif">{{ $grade ?: '—' }}</span>
+                            </td>
                             <td class="px-5 py-4">
                                 <label for="comment-{{ $studentId }}" class="sr-only">Comment for {{ $enrollment->student->first_name }} {{ $enrollment->student->last_name }}</label>
                                 <input wire:model.blur="comments.{{ $studentId }}" id="comment-{{ $studentId }}" type="text" maxlength="1000" placeholder="Optional feedback" @disabled($assessment->status === 'locked') class="w-full min-w-56 rounded-xl border-slate-300 text-sm shadow-sm focus:border-blue-700 focus:ring-blue-700 disabled:cursor-not-allowed disabled:bg-slate-100">
                                 @error("comments.$studentId") <p class="mt-1 text-xs text-rose-700">{{ $message }}</p> @enderror
                             </td>
+                            <td class="px-5 py-4 text-right">
+                                @if($assessment->status !== 'locked')
+                                    @if($isGraded)
+                                        <x-button type="button" wire:click="saveStudentScore({{ $studentId }})" variant="secondary" size="sm" icon="edit" target="saveStudentScore({{ $studentId }})" :loading="true">Change grade</x-button>
+                                    @else
+                                        <x-button type="button" wire:click="saveStudentScore({{ $studentId }})" variant="primary" size="sm" icon="check" target="saveStudentScore({{ $studentId }})" :loading="true">Grade</x-button>
+                                    @endif
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-5 py-14 text-center text-slate-500">
+                            <td colspan="6" class="px-5 py-14 text-center text-slate-500">
                                 @if (filled($search))
                                     No enrolled students match “{{ $search }}”.
                                 @else
@@ -134,11 +161,15 @@
             </table>
         </div>
 
-        <div class="flex justify-end gap-3 border-t border-slate-200 px-5 py-4">
-            <a href="{{ route($assessmentListRouteName) }}" class="inline-flex cursor-pointer items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50">Cancel</a>
-            @if ($assessment->status !== 'locked')
-                <x-button type="submit" variant="primary" icon="save" target="save" :loading="true">Save scores</x-button>
-            @endif
+        <div class="flex items-center justify-between gap-3 border-t border-slate-200 px-5 py-4">
+            <p class="text-xs text-slate-500">{{ $enteredScoreCount }} of {{ $allStudentCount }} students scored</p>
+            <div class="flex gap-3">
+                <a href="{{ route($assessmentListRouteName) }}" class="inline-flex cursor-pointer items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50">Cancel</a>
+                @if ($assessment->status !== 'locked')
+                    <x-button type="submit" variant="ghost" icon="save" target="save" :loading="true">Save all</x-button>
+                    <x-button type="button" wire:click="bulkGrade" variant="primary" icon="check" target="bulkGrade" :loading="true">Bulk grade all</x-button>
+                @endif
+            </div>
         </div>
     </form>
 </div>

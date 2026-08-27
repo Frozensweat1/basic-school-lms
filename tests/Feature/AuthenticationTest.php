@@ -25,4 +25,22 @@ class AuthenticationTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
     }
+
+    public function test_login_page_uses_flex_loading_state_for_submit_button(): void
+    {
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('data-submit-loading')
+            ->assertSee('button.is-loading [data-submit-label]')
+            ->assertSee('button.is-loading [data-submit-loading]');
+    }
+
+    public function test_registration_page_guides_users_to_contact_the_administrator(): void
+    {
+        $this->get(route('register'))
+            ->assertOk()
+            ->assertSee('Contact the administrator')
+            ->assertDontSee('<form')
+            ->assertDontSee('Create account');
+    }
 }

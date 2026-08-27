@@ -5,12 +5,36 @@
 
 @php
     $phoneHref = preg_replace('/[^+\d]/', '', (string) $branding['phone']);
-    $footerLinks = collect($navigation)->reject(fn ($item) => in_array($item['route'], ['home', 'website.contact'], true));
+    $footerLinks = collect($navigation)
+        ->filter(fn ($item) => ($item['footer'] ?? true) === true)
+        ->map(function ($item) {
+            $href = $item['href'] ?? (isset($item['route']) ? route($item['route']) : null);
+
+            return [
+                'label' => $item['label'] ?? '',
+                'href' => $href,
+            ];
+        })
+        ->filter(fn ($item) => filled($item['label']) && filled($item['href']));
 @endphp
 
 <footer class="relative overflow-hidden bg-slate-950 text-slate-300">
     <div aria-hidden="true" class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--brand-accent)] to-transparent opacity-70"></div>
     <div aria-hidden="true" class="absolute -right-32 -top-32 h-80 w-80 rounded-full opacity-10 blur-3xl" style="background: var(--brand-primary)"></div>
+
+    <div class="relative mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
+        <div class="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-lg shadow-slate-950/20">
+            <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                <div class="max-w-xl">
+                    <p class="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-slate-300">Stay connected</p>
+                    <h3 class="mt-2 text-lg font-black text-white sm:text-xl">Get school updates</h3>
+                </div>
+                <div class="w-full max-w-xl">
+                    <livewire:website.newsletter-signup compact />
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="relative mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 sm:py-16 lg:grid-cols-12 lg:px-8">
         <div class="lg:col-span-5">
@@ -24,7 +48,7 @@
                 <h2 class="text-xs font-bold uppercase tracking-[0.2em] text-white">Explore</h2>
                 <ul class="mt-5 grid grid-cols-2 gap-x-5 gap-y-3 text-sm sm:grid-cols-1">
                     @foreach ($footerLinks as $item)
-                        <li><a href="{{ route($item['route']) }}" class="transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4" style="outline-color: var(--brand-accent)">{{ $item['label'] }}</a></li>
+                        <li><a href="{{ $item['href'] }}" class="transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4" style="outline-color: var(--brand-accent)">{{ $item['label'] }}</a></li>
                     @endforeach
                 </ul>
             </div>
