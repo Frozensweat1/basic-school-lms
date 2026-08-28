@@ -1,8 +1,20 @@
 <div class="space-y-6">
     <div class="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div><p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Administration</p><h2 class="mt-1 text-2xl font-bold text-slate-900">School settings</h2><p class="mt-1 text-sm text-slate-600">Manage the school profile, public website branding, and LMS preferences.</p></div>
-        <x-button type="submit" form="school-settings-form" variant="primary" icon="save" target="save" :loading="true">Save changes</x-button>
+        <x-button type="submit" form="school-settings-form" variant="primary" icon="save" target="save" :loading="true">{{ $isInitialSetup ? 'Create school profile' : 'Save changes' }}</x-button>
     </div>
+
+    @if($isInitialSetup)
+        <section class="flex items-start gap-4 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-blue-950 shadow-sm" role="status">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700" aria-hidden="true">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.7 2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.7a2 2 0 0 0-3.4 0Z" /></svg>
+            </span>
+            <div>
+                <h3 class="font-semibold">School profile ready for setup</h3>
+                <p class="mt-1 text-sm leading-6 text-blue-800">The previous school data was reset successfully. Enter the new school details below and save to initialise the LMS again.</p>
+            </div>
+        </section>
+    @endif
 
     <form id="school-settings-form" wire:submit="save" class="grid gap-6 lg:grid-cols-2">
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h3 class="text-lg font-semibold text-slate-900">School profile</h3><div class="mt-5 space-y-4">
@@ -22,7 +34,7 @@
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h3 class="text-lg font-semibold text-slate-900">Social links</h3><div class="mt-5 grid gap-4 sm:grid-cols-2"><div><label class="text-sm">Facebook URL</label><input wire:model="socialFacebook" type="url" class="mt-1 block w-full rounded-lg border-slate-300"></div><div><label class="text-sm">Instagram URL</label><input wire:model="socialInstagram" type="url" class="mt-1 block w-full rounded-lg border-slate-300"></div><div><label class="text-sm">YouTube URL</label><input wire:model="socialYoutube" type="url" class="mt-1 block w-full rounded-lg border-slate-300"></div><div><label class="text-sm">X URL</label><input wire:model="socialX" type="url" class="mt-1 block w-full rounded-lg border-slate-300"></div><div><label class="text-sm">WhatsApp number</label><input wire:model="socialWhatsapp" class="mt-1 block w-full rounded-lg border-slate-300"></div></div></section>
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><h3 class="text-lg font-semibold text-slate-900">System preferences</h3><div class="mt-5 space-y-4"><div><label class="text-sm">Timezone</label><input wire:model="timezone" class="mt-1 block w-full rounded-lg border-slate-300">@error('timezone')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror</div><div><label class="text-sm">Week starts on</label><select wire:model="weekStartsOn" class="w-full rounded-lg border-slate-300"><option value="monday">Monday</option><option value="sunday">Sunday</option></select></div><label class="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-3 text-sm"><input wire:model="notificationsEnabled" type="checkbox" class="rounded border-slate-300 text-blue-700">Enable LMS notifications</label><label class="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-3 text-sm"><input wire:model="lateSubmissionsEnabled" type="checkbox" class="rounded border-slate-300 text-blue-700">Allow late-submission workflows</label></div></section>
-        <div class="flex justify-end lg:col-span-2"><x-button type="submit" variant="primary" icon="save" target="save" :loading="true">Save changes</x-button></div>
+        <div class="flex justify-end lg:col-span-2"><x-button type="submit" variant="primary" icon="save" target="save" :loading="true">{{ $isInitialSetup ? 'Create school profile' : 'Save changes' }}</x-button></div>
     </form>
 
     <section class="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm lg:flex lg:items-center lg:justify-between lg:gap-8"><div><h3 class="text-lg font-semibold text-amber-950">Data maintenance</h3><p class="mt-1 text-sm text-amber-900">Download a JSON backup of the LMS data, or reset demo data while preserving super administrator accounts.</p></div><div class="mt-4 flex flex-wrap gap-3 lg:mt-0"><x-button type="button" variant="secondary" icon="save" target="backupDatabase" :loading="true" wire:click="backupDatabase">Download backup</x-button>@if(auth()->user()->hasRole('super_admin'))<x-button type="button" variant="danger" icon="trash" target="resetDatabase" :loading="true" wire:click="resetDatabase" onclick="return confirm('This permanently removes all school data and non-super-admin users. Continue?')">Reset database</x-button>@endif</div></section>
