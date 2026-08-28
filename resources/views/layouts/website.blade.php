@@ -42,7 +42,6 @@
         ['label' => 'Academics', 'route' => 'website.academics'],
         ['label' => 'Admissions', 'route' => 'website.admissions'],
         ['label' => 'Teachers', 'route' => 'website.teachers'],
-        ['label' => 'Testimonials', 'href' => route('home').'#testimonials', 'active_routes' => ['home']],
         ['label' => 'News', 'route' => 'website.news'],
         ['label' => 'Events', 'route' => 'website.events'],
         ['label' => 'Gallery', 'route' => 'website.gallery'],
@@ -138,7 +137,6 @@
                         @foreach ($utilityLinks as $item)
                             <a href="{{ route($item['route']) }}" class="transition hover:text-slate-900">{{ $item['label'] }}</a>
                         @endforeach
-                        <a href="{{ route('website.sitemap') }}" class="transition hover:text-slate-900">Sitemap</a>
                     </nav>
                 </div>
             </div>
