@@ -12,6 +12,7 @@
         'lg' => 'max-w-lg',
         'xl' => 'max-w-2xl',
         '2xl' => 'max-w-3xl',
+        '3xl' => 'max-w-5xl',
     ];
 @endphp
 

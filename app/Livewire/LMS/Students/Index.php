@@ -2,10 +2,13 @@
 
 namespace App\Livewire\LMS\Students;
 
-use App\Models\ClassEnrollment;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\User;
+use App\Services\SpreadsheetExporter;
+use App\Services\StudentAdmissionService;
+use App\Support\Concerns\ImportsTabularFiles;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\UploadedFile;
@@ -17,24 +20,29 @@ use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
-use ZipArchive;
 
 #[Layout('layouts.lms')]
 class Index extends Component
 {
     use AuthorizesRequests;
+    use ImportsTabularFiles;
     use WithFileUploads;
     use WithPagination;
 
     public bool $showFormModal = false;
+
     public bool $showDeleteModal = false;
+
     public bool $showImportForm = false;
 
     public ?int $editingId = null;
+
     public ?int $deletingId = null;
 
     #[Url(as: 'q', except: '')]
@@ -56,23 +64,96 @@ class Index extends Component
     public int $perPage = 15;
 
     public string $studentId = '';
+
     public string $admissionNumber = '';
+
     public string $firstName = '';
+
     public string $middleName = '';
+
     public string $lastName = '';
+
+    public string $email = '';
+
+    public string $password = '';
+
     public string $dateOfBirth = '';
+
     public string $gender = '';
+
+    public string $homeTown = '';
+
+    public string $region = '';
+
+    public string $nationality = '';
+
+    public string $denomination = '';
+
+    public string $healthInsuranceId = '';
+
     public string $admissionDate = '';
+
     public string $schoolClassId = '';
+
+    public string $enrollmentType = 'day';
+
     public string $status = 'active';
 
-    /** @var \Livewire\Features\SupportFileUploads\TemporaryUploadedFile|UploadedFile|null */
+    public string $previousSchoolName = '';
+
+    public string $previousSchoolCity = '';
+
+    public string $previousSchoolCountry = '';
+
+    public string $previousSchoolGpsAddress = '';
+
+    public string $previousSchoolPhone = '';
+
+    public string $previousSchoolLastClass = '';
+
+    public string $guardianFirstName = '';
+
+    public string $guardianLastName = '';
+
+    public string $guardianGpsAddress = '';
+
+    public string $guardianCity = '';
+
+    public string $guardianPhone = '';
+
+    public string $guardianWorkplace = '';
+
+    public string $guardianEmail = '';
+
+    public string $guardianGhanaCardNumber = '';
+
+    public string $guardianInformationDate = '';
+
+    public string $guardianRelationship = 'Guardian';
+
+    public bool $hasAllergies = false;
+
+    public string $allergyDetails = '';
+
+    /** @var TemporaryUploadedFile|UploadedFile|null */
     public $importFile = null;
 
     /** @var array<int, string> */
     public array $importErrors = [];
 
     private const STUDENT_STATUSES = ['active', 'graduated', 'transferred', 'withdrawn', 'suspended'];
+
+    private const IMPORT_HEADERS = [
+        'student_id', 'admission_number', 'first_name', 'middle_name', 'last_name',
+        'email', 'temporary_password', 'date_of_birth', 'gender', 'home_town', 'region',
+        'nationality', 'denomination', 'health_insurance_id', 'admission_date', 'status',
+        'class_name', 'enrollment_type', 'previous_school_name', 'previous_school_city',
+        'previous_school_country', 'previous_school_gps_address', 'previous_school_phone',
+        'previous_school_last_class', 'guardian_first_name', 'guardian_last_name',
+        'guardian_relationship', 'guardian_email', 'guardian_phone', 'guardian_information_date',
+        'guardian_gps_address', 'guardian_city', 'guardian_workplace',
+        'guardian_ghana_card_number', 'has_allergies', 'allergy_details',
+    ];
 
     public function mount(): void
     {
@@ -86,6 +167,7 @@ class Index extends Component
 
         $this->resetForm();
         $this->admissionDate = now()->toDateString();
+        $this->guardianInformationDate = now()->toDateString();
         $this->showFormModal = true;
     }
 
@@ -171,13 +253,49 @@ class Index extends Component
         $this->firstName = $student->first_name;
         $this->middleName = $student->middle_name ?? '';
         $this->lastName = $student->last_name;
+        $this->email = $student->user?->email ?? '';
+        $this->password = '';
         $this->dateOfBirth = $student->date_of_birth->toDateString();
         $this->gender = $student->gender;
+        $this->homeTown = $student->home_town ?? '';
+        $this->region = $student->region ?? '';
+        $this->nationality = $student->nationality ?? '';
+        $this->denomination = $student->denomination ?? '';
+        $this->healthInsuranceId = $student->health_insurance_id ?? '';
         $this->admissionDate = $student->admission_date->toDateString();
-        $this->schoolClassId = (string) $student->enrollments()
+        $activeEnrollment = $student->enrollments()
             ->where('status', 'active')
-            ->value('school_class_id');
+            ->first();
+        $this->schoolClassId = (string) ($activeEnrollment?->school_class_id ?? '');
+        $this->enrollmentType = $activeEnrollment?->enrollment_type ?? 'day';
         $this->status = $student->status;
+        $this->previousSchoolName = $student->previous_school_name ?? '';
+        $this->previousSchoolCity = $student->previous_school_city ?? '';
+        $this->previousSchoolCountry = $student->previous_school_country ?? '';
+        $this->previousSchoolGpsAddress = $student->previous_school_gps_address ?? '';
+        $this->previousSchoolPhone = $student->previous_school_phone ?? '';
+        $this->previousSchoolLastClass = $student->previous_school_last_class ?? '';
+        $this->hasAllergies = (bool) $student->has_allergies;
+        $this->allergyDetails = $student->allergy_details ?? '';
+
+        $guardian = $student->parents()
+            ->orderByPivot('is_primary_contact', 'desc')
+            ->orderBy('parents.id')
+            ->first();
+        if ($guardian) {
+            $this->guardianFirstName = $guardian->first_name;
+            $this->guardianLastName = $guardian->last_name;
+            $this->guardianGpsAddress = $guardian->gps_address ?? '';
+            $this->guardianCity = $guardian->city ?? '';
+            $this->guardianPhone = $guardian->phone ?? '';
+            $this->guardianWorkplace = $guardian->workplace ?? '';
+            $this->guardianEmail = $guardian->user?->email ?? $guardian->email ?? '';
+            $this->guardianGhanaCardNumber = $guardian->ghana_card_number ?? '';
+            $this->guardianInformationDate = filled($guardian->pivot->information_date)
+                ? Carbon::parse($guardian->pivot->information_date)->toDateString()
+                : '';
+            $this->guardianRelationship = $guardian->pivot->relationship ?? 'Guardian';
+        }
         $this->resetValidation();
         $this->showFormModal = true;
     }
@@ -194,53 +312,98 @@ class Index extends Component
         $schoolId = $this->ensureSchoolConfigured();
 
         try {
+            $matchingAccountId = $student?->user_id
+                ?? User::query()->whereRaw('LOWER(email) = ?', [strtolower(trim($this->email))])->value('id');
             $data = $this->validate([
                 'studentId' => ['required', 'string', 'max:50', Rule::unique('students', 'student_id')->ignore($student?->id)],
                 'admissionNumber' => ['required', 'string', 'max:50', Rule::unique('students', 'admission_number')->ignore($student?->id)],
                 'firstName' => ['required', 'string', 'max:100'],
                 'middleName' => ['nullable', 'string', 'max:100'],
                 'lastName' => ['required', 'string', 'max:100'],
+                'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($matchingAccountId)],
+                'password' => [$matchingAccountId ? 'nullable' : 'required', 'string', 'min:10'],
                 'dateOfBirth' => ['required', 'date', 'before:today'],
                 'gender' => ['required', 'in:male,female,other'],
+                'homeTown' => ['required', 'string', 'max:100'],
+                'region' => ['required', 'string', 'max:100'],
+                'nationality' => ['required', 'string', 'max:100'],
+                'denomination' => ['nullable', 'string', 'max:100'],
+                'healthInsuranceId' => ['nullable', 'string', 'max:100'],
                 'admissionDate' => ['required', 'date'],
-                'schoolClassId' => ['nullable', 'integer', 'exists:school_classes,id'],
+                'schoolClassId' => [Rule::requiredIf(fn () => in_array($this->status, ['active', 'suspended'], true)), 'nullable', 'integer', 'exists:school_classes,id'],
+                'enrollmentType' => ['required', Rule::in(['day', 'boarding'])],
                 'status' => ['required', Rule::in(self::STUDENT_STATUSES)],
+                'previousSchoolName' => ['nullable', 'string', 'max:255'],
+                'previousSchoolCity' => ['nullable', 'string', 'max:100'],
+                'previousSchoolCountry' => ['nullable', 'string', 'max:100'],
+                'previousSchoolGpsAddress' => ['nullable', 'string', 'max:255'],
+                'previousSchoolPhone' => ['nullable', 'string', 'max:30'],
+                'previousSchoolLastClass' => ['nullable', 'string', 'max:100'],
+                'guardianFirstName' => ['required', 'string', 'max:100'],
+                'guardianLastName' => ['required', 'string', 'max:100'],
+                'guardianGpsAddress' => ['required', 'string', 'max:255'],
+                'guardianCity' => ['required', 'string', 'max:100'],
+                'guardianPhone' => ['required', 'string', 'min:8', 'max:30'],
+                'guardianWorkplace' => ['nullable', 'string', 'max:255'],
+                'guardianEmail' => ['required', 'email', 'max:255', 'different:email'],
+                'guardianGhanaCardNumber' => ['nullable', 'string', 'max:50'],
+                'guardianInformationDate' => ['required', 'date'],
+                'guardianRelationship' => ['required', 'string', 'max:50'],
+                'hasAllergies' => ['boolean'],
+                'allergyDetails' => [Rule::requiredIf($this->hasAllergies), 'nullable', 'string', 'max:5000'],
             ]);
 
             if (filled($data['schoolClassId'])) {
                 $this->schoolClassesQuery($schoolId)->whereKey($data['schoolClassId'])->firstOrFail();
             }
 
-            DB::transaction(function () use ($student, $schoolId, $data): void {
-                $record = Student::updateOrCreate(
-                    ['id' => $student?->id],
-                    [
-                        'school_id' => $schoolId,
-                        'student_id' => $data['studentId'],
-                        'admission_number' => $data['admissionNumber'],
-                        'first_name' => $data['firstName'],
-                        'middle_name' => filled($data['middleName']) ? $data['middleName'] : null,
-                        'last_name' => $data['lastName'],
-                        'date_of_birth' => $data['dateOfBirth'],
-                        'gender' => $data['gender'],
-                        'admission_date' => $data['admissionDate'],
-                        'status' => $data['status'],
-                    ],
-                );
-
-                if (filled($data['schoolClassId'])) {
-                    ClassEnrollment::query()
-                        ->where('student_id', $record->id)
-                        ->where('status', 'active')
-                        ->where('school_class_id', '!=', $data['schoolClassId'])
-                        ->update(['status' => 'transferred', 'left_at' => now()->toDateString()]);
-
-                    ClassEnrollment::updateOrCreate(
-                        ['student_id' => $record->id, 'school_class_id' => $data['schoolClassId']],
-                        ['enrolled_at' => $data['admissionDate'], 'status' => 'active', 'left_at' => null],
-                    );
-                }
-            });
+            app(StudentAdmissionService::class)->admit(
+                $student,
+                $schoolId,
+                [
+                    'student_id' => $data['studentId'],
+                    'admission_number' => $data['admissionNumber'],
+                    'first_name' => $data['firstName'],
+                    'middle_name' => filled($data['middleName']) ? $data['middleName'] : null,
+                    'last_name' => $data['lastName'],
+                    'date_of_birth' => $data['dateOfBirth'],
+                    'gender' => $data['gender'],
+                    'home_town' => $data['homeTown'],
+                    'region' => $data['region'],
+                    'nationality' => $data['nationality'],
+                    'denomination' => $data['denomination'] ?: null,
+                    'health_insurance_id' => $data['healthInsuranceId'] ?: null,
+                    'admission_date' => $data['admissionDate'],
+                    'status' => $data['status'],
+                    'previous_school_name' => $data['previousSchoolName'] ?: null,
+                    'previous_school_city' => $data['previousSchoolCity'] ?: null,
+                    'previous_school_country' => $data['previousSchoolCountry'] ?: null,
+                    'previous_school_gps_address' => $data['previousSchoolGpsAddress'] ?: null,
+                    'previous_school_phone' => $data['previousSchoolPhone'] ?: null,
+                    'previous_school_last_class' => $data['previousSchoolLastClass'] ?: null,
+                    'has_allergies' => $data['hasAllergies'],
+                    'allergy_details' => $data['allergyDetails'] ?: null,
+                ],
+                [
+                    'name' => trim(implode(' ', array_filter([$data['firstName'], $data['middleName'], $data['lastName']]))),
+                    'email' => $data['email'],
+                    'password' => $data['password'] ?: null,
+                ],
+                filled($data['schoolClassId']) ? (int) $data['schoolClassId'] : null,
+                $data['enrollmentType'],
+                [
+                    'first_name' => $data['guardianFirstName'],
+                    'last_name' => $data['guardianLastName'],
+                    'gps_address' => $data['guardianGpsAddress'],
+                    'city' => $data['guardianCity'],
+                    'phone' => $data['guardianPhone'],
+                    'workplace' => $data['guardianWorkplace'] ?: null,
+                    'email' => $data['guardianEmail'],
+                    'ghana_card_number' => $data['guardianGhanaCardNumber'] ?: null,
+                    'relationship' => $data['guardianRelationship'],
+                    'information_date' => $data['guardianInformationDate'],
+                ],
+            );
 
             $this->showFormModal = false;
             $this->resetForm();
@@ -300,27 +463,23 @@ class Index extends Component
 
             DB::transaction(function () use ($imports, $schoolId): void {
                 foreach ($imports as $import) {
-                    $student = Student::create([
-                        'school_id' => $schoolId,
-                        'student_id' => $import['student']['student_id'],
-                        'admission_number' => $import['student']['admission_number'],
-                        'first_name' => $import['student']['first_name'],
-                        'middle_name' => $import['student']['middle_name'],
-                        'last_name' => $import['student']['last_name'],
-                        'date_of_birth' => $import['student']['date_of_birth'],
-                        'gender' => $import['student']['gender'],
-                        'admission_date' => $import['student']['admission_date'],
-                        'status' => $import['student']['status'],
-                    ]);
-
-                    if ($import['school_class_id']) {
-                        ClassEnrollment::create([
-                            'student_id' => $student->id,
-                            'school_class_id' => $import['school_class_id'],
-                            'enrolled_at' => $import['student']['admission_date'],
-                            'status' => 'active',
-                        ]);
-                    }
+                    app(StudentAdmissionService::class)->admit(
+                        null,
+                        $schoolId,
+                        $import['student'],
+                        [
+                            'name' => trim(implode(' ', array_filter([
+                                $import['student']['first_name'],
+                                $import['student']['middle_name'],
+                                $import['student']['last_name'],
+                            ]))),
+                            'email' => $import['account']['email'],
+                            'password' => $import['account']['password'],
+                        ],
+                        $import['school_class_id'],
+                        $import['enrollment_type'],
+                        $import['guardian'],
+                    );
                 }
             });
 
@@ -328,7 +487,7 @@ class Index extends Component
             $this->showImportForm = false;
             $this->resetImportForm();
             $this->resetPage();
-            LivewireAlert::title("{$imported} " . str('student')->plural($imported) . ' imported')
+            LivewireAlert::title("{$imported} ".str('student')->plural($imported).' imported')
                 ->success()
                 ->asToast()
                 ->position('top-end')
@@ -359,13 +518,15 @@ class Index extends Component
 
         return response()->streamDownload(function (): void {
             $output = fopen('php://output', 'wb');
-            fputcsv($output, [
-                'student_id', 'admission_number', 'first_name', 'middle_name', 'last_name',
-                'date_of_birth', 'gender', 'admission_date', 'status', 'class_name',
-            ]);
+            fputcsv($output, self::IMPORT_HEADERS);
             fputcsv($output, [
                 'STU-001', 'ADM-001', 'Ama', '', 'Mensah',
-                '2015-06-12', 'female', now()->toDateString(), 'active', 'Basic 1',
+                'ama.mensah@example.com', 'ChangeMe123!', '2015-06-12', 'female', 'Kumasi',
+                'Ashanti', 'Ghanaian', 'Christian', 'NHIS-001', now()->toDateString(), 'active',
+                'Basic 1', 'day', 'Happy Kids School', 'Kumasi', 'Ghana', 'AK-000-0000',
+                '0240000000', 'KG 2', 'Adwoa', 'Mensah', 'Mother', 'adwoa.mensah@example.com',
+                '0241111111', now()->toDateString(), 'AK-111-1111', 'Kumasi', 'Example Company',
+                'GHA-000000000-0', 'no', '',
             ]);
             fclose($output);
         }, 'student-import-template.csv', ['Content-Type' => 'text/csv']);
@@ -415,9 +576,19 @@ class Index extends Component
     {
         $this->reset([
             'editingId', 'deletingId', 'studentId', 'admissionNumber', 'firstName', 'middleName',
-            'lastName', 'dateOfBirth', 'gender', 'admissionDate', 'schoolClassId', 'status',
+            'lastName', 'email', 'password', 'dateOfBirth', 'gender', 'homeTown', 'region',
+            'nationality', 'denomination', 'healthInsuranceId', 'admissionDate', 'schoolClassId',
+            'enrollmentType', 'status', 'previousSchoolName', 'previousSchoolCity',
+            'previousSchoolCountry', 'previousSchoolGpsAddress', 'previousSchoolPhone',
+            'previousSchoolLastClass', 'guardianFirstName', 'guardianLastName',
+            'guardianGpsAddress', 'guardianCity', 'guardianPhone', 'guardianWorkplace',
+            'guardianEmail', 'guardianGhanaCardNumber', 'guardianInformationDate',
+            'guardianRelationship', 'hasAllergies', 'allergyDetails',
         ]);
         $this->status = 'active';
+        $this->enrollmentType = 'day';
+        $this->guardianRelationship = 'Guardian';
+        $this->hasAllergies = false;
         $this->resetValidation();
     }
 
@@ -447,132 +618,14 @@ class Index extends Component
 
     private function schoolClassesQuery(int $schoolId)
     {
-        return SchoolClass::query()->whereHas('academicYear', fn ($years) => $years->where('school_id', $schoolId));
-    }
-
-    /** @return array<int, array<int, string|int|float|null>> */
-    private function readImportRows(UploadedFile $file): array
-    {
-        $path = $file->getRealPath();
-        throw_unless($path, ValidationException::withMessages(['importFile' => 'The uploaded file could not be read.']));
-
-        return strtolower($file->getClientOriginalExtension()) === 'xlsx'
-            ? $this->readXlsxRows($path)
-            : $this->readCsvRows($path);
-    }
-
-    /** @return array<int, array<int, string|null>> */
-    private function readCsvRows(string $path): array
-    {
-        $handle = fopen($path, 'rb');
-        throw_unless($handle, ValidationException::withMessages(['importFile' => 'The CSV file could not be opened.']));
-
-        $rows = [];
-
-        try {
-            while (($row = fgetcsv($handle)) !== false) {
-                if (count(array_filter($row, fn ($value) => trim((string) $value) !== '')) === 0) {
-                    continue;
-                }
-
-                $rows[] = array_map(fn ($value) => is_string($value) ? trim($value) : $value, $row);
-            }
-        } finally {
-            fclose($handle);
-        }
-
-        return $rows;
-    }
-
-    /** @return array<int, array<int, string|int|float|null>> */
-    private function readXlsxRows(string $path): array
-    {
-        throw_unless(class_exists(ZipArchive::class), ValidationException::withMessages([
-            'importFile' => 'Excel imports require the PHP ZIP extension.',
-        ]));
-
-        $archive = new ZipArchive;
-        throw_unless($archive->open($path) === true, ValidationException::withMessages([
-            'importFile' => 'The Excel file could not be opened. Upload a valid .xlsx file.',
-        ]));
-
-        try {
-            $sheet = $archive->getFromName('xl/worksheets/sheet1.xml');
-            throw_unless($sheet !== false, ValidationException::withMessages([
-                'importFile' => 'The Excel file does not contain a first worksheet.',
-            ]));
-
-            $sharedStrings = $this->xlsxSharedStrings($archive->getFromName('xl/sharedStrings.xml') ?: null);
-            $xml = simplexml_load_string($sheet);
-            throw_unless($xml !== false, ValidationException::withMessages([
-                'importFile' => 'The first worksheet could not be read.',
-            ]));
-
-            $rows = [];
-            foreach ($xml->xpath('//*[local-name()="sheetData"]/*[local-name()="row"]') ?: [] as $row) {
-                $values = [];
-
-                foreach ($row->xpath('./*[local-name()="c"]') ?: [] as $cell) {
-                    $reference = (string) $cell['r'];
-                    $column = $this->xlsxColumnIndex((string) preg_replace('/\d+/', '', $reference));
-                    $type = (string) $cell['t'];
-                    $valueNode = $cell->xpath('./*[local-name()="v"]')[0] ?? null;
-                    $value = $valueNode === null ? null : (string) $valueNode;
-
-                    if ($type === 's' && $value !== null) {
-                        $value = $sharedStrings[(int) $value] ?? '';
-                    } elseif ($type === 'inlineStr') {
-                        $value = implode('', array_map('strval', $cell->xpath('.//*[local-name()="t"]') ?: []));
-                    }
-
-                    $values[$column] = $value;
-                }
-
-                if ($values !== []) {
-                    ksort($values);
-                    $rows[] = $values;
-                }
-            }
-
-            return $rows;
-        } finally {
-            $archive->close();
-        }
-    }
-
-    /** @return array<int, string> */
-    private function xlsxSharedStrings(?string $xml): array
-    {
-        if (! $xml) {
-            return [];
-        }
-
-        $document = simplexml_load_string($xml);
-        if ($document === false) {
-            return [];
-        }
-
-        $strings = [];
-        foreach ($document->xpath('//*[local-name()="si"]') ?: [] as $item) {
-            $strings[] = implode('', array_map('strval', $item->xpath('.//*[local-name()="t"]') ?: []));
-        }
-
-        return $strings;
-    }
-
-    private function xlsxColumnIndex(string $column): int
-    {
-        $index = 0;
-        foreach (str_split(strtoupper($column)) as $letter) {
-            $index = ($index * 26) + (ord($letter) - 64);
-        }
-
-        return max(0, $index - 1);
+        return SchoolClass::query()->whereHas('academicYear', fn ($years) => $years
+            ->where('school_id', $schoolId)
+            ->where('is_active', true));
     }
 
     /**
-     * @param array<int, array<int, string|int|float|null>> $rows
-     * @return array{0: array<int, array{student: array<string, string|null>, school_class_id: int|null}>, 1: array<int, string>}
+     * @param  array<int, array<int, string|int|float|null>>  $rows
+     * @return array{0: array<int, array{student: array<string, mixed>, account: array{email: string, password: string}, guardian: array<string, mixed>, school_class_id: int, enrollment_type: string}>, 1: array<int, string>}
      */
     private function prepareImportRows(array $rows, int $schoolId): array
     {
@@ -581,11 +634,17 @@ class Index extends Component
         ]));
 
         $headers = array_map(fn ($header) => $this->normaliseImportHeader((string) $header), array_shift($rows));
-        $requiredHeaders = ['student_id', 'admission_number', 'first_name', 'last_name', 'date_of_birth', 'gender', 'admission_date'];
+        $requiredHeaders = [
+            'student_id', 'admission_number', 'first_name', 'last_name', 'email',
+            'temporary_password', 'date_of_birth', 'gender', 'home_town', 'region',
+            'nationality', 'admission_date', 'class_name', 'enrollment_type',
+            'guardian_first_name', 'guardian_last_name', 'guardian_email', 'guardian_phone',
+            'guardian_information_date', 'guardian_gps_address', 'guardian_city', 'has_allergies',
+        ];
         $missingHeaders = array_diff($requiredHeaders, $headers);
 
         throw_if($missingHeaders !== [], ValidationException::withMessages([
-            'importFile' => 'Missing required column(s): ' . implode(', ', $missingHeaders) . '.',
+            'importFile' => 'Missing required column(s): '.implode(', ', $missingHeaders).'.',
         ]));
         throw_if(count($headers) !== count(array_unique($headers)), ValidationException::withMessages([
             'importFile' => 'Column headings must be unique.',
@@ -606,6 +665,7 @@ class Index extends Component
         $errors = [];
         $studentIds = [];
         $admissionNumbers = [];
+        $emails = [];
 
         foreach ($rows as $offset => $row) {
             $line = $offset + 2;
@@ -622,11 +682,54 @@ class Index extends Component
                 'last_name' => $values['last_name'] ?? '',
                 'date_of_birth' => $this->normaliseImportDate($values['date_of_birth'] ?? ''),
                 'gender' => strtolower($values['gender'] ?? ''),
+                'home_town' => $values['home_town'] ?? '',
+                'region' => $values['region'] ?? '',
+                'nationality' => $values['nationality'] ?? '',
+                'denomination' => filled($values['denomination'] ?? '') ? $values['denomination'] : null,
+                'health_insurance_id' => filled($values['health_insurance_id'] ?? '') ? $values['health_insurance_id'] : null,
                 'admission_date' => $this->normaliseImportDate($values['admission_date'] ?? ''),
                 'status' => strtolower($values['status'] ?? 'active') ?: 'active',
+                'previous_school_name' => filled($values['previous_school_name'] ?? '') ? $values['previous_school_name'] : null,
+                'previous_school_city' => filled($values['previous_school_city'] ?? '') ? $values['previous_school_city'] : null,
+                'previous_school_country' => filled($values['previous_school_country'] ?? '') ? $values['previous_school_country'] : null,
+                'previous_school_gps_address' => filled($values['previous_school_gps_address'] ?? '') ? $values['previous_school_gps_address'] : null,
+                'previous_school_phone' => filled($values['previous_school_phone'] ?? '') ? $values['previous_school_phone'] : null,
+                'previous_school_last_class' => filled($values['previous_school_last_class'] ?? '') ? $values['previous_school_last_class'] : null,
+                'has_allergies' => $this->normaliseImportBoolean($values['has_allergies'] ?? ''),
+                'allergy_details' => filled($values['allergy_details'] ?? '') ? $values['allergy_details'] : null,
             ];
+            $accountData = [
+                'email' => strtolower($values['email'] ?? ''),
+                'password' => $values['temporary_password'] ?? '',
+            ];
+            $guardianData = [
+                'first_name' => $values['guardian_first_name'] ?? '',
+                'last_name' => $values['guardian_last_name'] ?? '',
+                'relationship' => $values['guardian_relationship'] ?? 'Guardian',
+                'email' => strtolower($values['guardian_email'] ?? ''),
+                'phone' => $values['guardian_phone'] ?? '',
+                'information_date' => $this->normaliseImportDate($values['guardian_information_date'] ?? ''),
+                'gps_address' => $values['guardian_gps_address'] ?? '',
+                'city' => $values['guardian_city'] ?? '',
+                'workplace' => filled($values['guardian_workplace'] ?? '') ? $values['guardian_workplace'] : null,
+                'ghana_card_number' => filled($values['guardian_ghana_card_number'] ?? '') ? $values['guardian_ghana_card_number'] : null,
+            ];
+            $enrollmentType = strtolower($values['enrollment_type'] ?? '');
 
-            $validator = Validator::make($studentData, [
+            $validator = Validator::make($studentData + [
+                'student_email' => $accountData['email'],
+                'temporary_password' => $accountData['password'],
+                'guardian_first_name' => $guardianData['first_name'],
+                'guardian_last_name' => $guardianData['last_name'],
+                'guardian_relationship' => $guardianData['relationship'],
+                'guardian_email' => $guardianData['email'],
+                'guardian_phone' => $guardianData['phone'],
+                'guardian_information_date' => $guardianData['information_date'],
+                'guardian_gps_address' => $guardianData['gps_address'],
+                'guardian_city' => $guardianData['city'],
+                'enrollment_type' => $enrollmentType,
+                'class_name' => $values['class_name'] ?? '',
+            ], [
                 'student_id' => ['required', 'string', 'max:50'],
                 'admission_number' => ['required', 'string', 'max:50'],
                 'first_name' => ['required', 'string', 'max:100'],
@@ -634,114 +737,116 @@ class Index extends Component
                 'last_name' => ['required', 'string', 'max:100'],
                 'date_of_birth' => ['required', 'date', 'before:today'],
                 'gender' => ['required', 'in:male,female,other'],
+                'home_town' => ['required', 'string', 'max:100'],
+                'region' => ['required', 'string', 'max:100'],
+                'nationality' => ['required', 'string', 'max:100'],
+                'denomination' => ['nullable', 'string', 'max:100'],
+                'health_insurance_id' => ['nullable', 'string', 'max:100'],
                 'admission_date' => ['required', 'date'],
                 'status' => ['required', Rule::in(self::STUDENT_STATUSES)],
+                'previous_school_name' => ['nullable', 'string', 'max:255'],
+                'previous_school_city' => ['nullable', 'string', 'max:100'],
+                'previous_school_country' => ['nullable', 'string', 'max:100'],
+                'previous_school_gps_address' => ['nullable', 'string', 'max:255'],
+                'previous_school_phone' => ['nullable', 'string', 'max:30'],
+                'previous_school_last_class' => ['nullable', 'string', 'max:100'],
+                'has_allergies' => ['required', 'boolean'],
+                'allergy_details' => [Rule::requiredIf($studentData['has_allergies'] === true), 'nullable', 'string', 'max:5000'],
+                'student_email' => ['required', 'email', 'max:255'],
+                'temporary_password' => ['required', 'string', 'min:10'],
+                'enrollment_type' => ['required', Rule::in(['day', 'boarding'])],
+                'class_name' => ['required', 'string', 'max:255'],
+                'guardian_first_name' => ['required', 'string', 'max:100'],
+                'guardian_last_name' => ['required', 'string', 'max:100'],
+                'guardian_relationship' => ['required', 'string', 'max:50'],
+                'guardian_email' => ['required', 'email', 'max:255', 'different:student_email'],
+                'guardian_phone' => ['required', 'string', 'min:8', 'max:30'],
+                'guardian_information_date' => ['required', 'date'],
+                'guardian_gps_address' => ['required', 'string', 'max:255'],
+                'guardian_city' => ['required', 'string', 'max:100'],
             ]);
 
             if ($validator->fails()) {
-                $errors[] = "Row {$line}: " . implode(' ', $validator->errors()->all());
+                $errors[] = "Row {$line}: ".implode(' ', $validator->errors()->all());
+
                 continue;
             }
 
             $studentKey = strtolower($studentData['student_id']);
             $admissionKey = strtolower($studentData['admission_number']);
+            $emailKey = strtolower($accountData['email']);
             if (isset($studentIds[$studentKey])) {
                 $errors[] = "Row {$line}: Student ID '{$studentData['student_id']}' is repeated in this file.";
+
                 continue;
             }
             if (isset($admissionNumbers[$admissionKey])) {
                 $errors[] = "Row {$line}: Admission number '{$studentData['admission_number']}' is repeated in this file.";
+
+                continue;
+            }
+            if (isset($emails[$emailKey])) {
+                $errors[] = "Row {$line}: Email '{$accountData['email']}' is repeated in this file.";
+
                 continue;
             }
             if (Student::withTrashed()->where('student_id', $studentData['student_id'])->exists()) {
                 $errors[] = "Row {$line}: Student ID '{$studentData['student_id']}' already exists.";
+
                 continue;
             }
             if (Student::withTrashed()->where('admission_number', $studentData['admission_number'])->exists()) {
                 $errors[] = "Row {$line}: Admission number '{$studentData['admission_number']}' already exists.";
+
+                continue;
+            }
+            if (User::query()->whereRaw('LOWER(email) = ?', [$emailKey])->exists()) {
+                $errors[] = "Row {$line}: Email '{$accountData['email']}' already belongs to a user account.";
+
                 continue;
             }
 
             $studentIds[$studentKey] = true;
             $admissionNumbers[$admissionKey] = true;
+            $emails[$emailKey] = true;
             $schoolClassId = null;
             $className = trim($values['class_name'] ?? '');
 
-            if ($className !== '') {
-                $matchingClasses = $classesByName->get(strtolower($className), collect());
-                if ($matchingClasses->count() !== 1) {
-                    $errors[] = $matchingClasses->isEmpty()
-                        ? "Row {$line}: '{$className}' is not an active class."
-                        : "Row {$line}: '{$className}' matches multiple active classes; use a unique class name.";
-                    continue;
-                }
+            $matchingClasses = $classesByName->get(strtolower($className), collect());
+            if ($matchingClasses->count() !== 1) {
+                $errors[] = $matchingClasses->isEmpty()
+                    ? "Row {$line}: '{$className}' is not an active class."
+                    : "Row {$line}: '{$className}' matches multiple active classes; use a unique class name.";
 
-                if ($studentData['status'] !== 'active') {
-                    $errors[] = "Row {$line}: Only active students can be assigned to a class during import.";
-                    continue;
-                }
-
-                $schoolClassId = $matchingClasses->first()->id;
+                continue;
             }
 
-            $imports[] = ['student' => $studentData, 'school_class_id' => $schoolClassId];
+            if ($studentData['status'] !== 'active') {
+                $errors[] = "Row {$line}: Imported admissions must have active status when a class is assigned.";
+
+                continue;
+            }
+
+            $schoolClassId = $matchingClasses->first()->id;
+
+            $imports[] = [
+                'student' => $studentData,
+                'account' => $accountData,
+                'guardian' => $guardianData,
+                'school_class_id' => $schoolClassId,
+                'enrollment_type' => $enrollmentType,
+            ];
         }
 
         return [$imports, $errors];
     }
 
-    private function normaliseImportHeader(string $header): string
-    {
-        $header = preg_replace('/^\xEF\xBB\xBF/', '', trim($header)) ?? '';
-
-        return strtolower(str_replace([' ', '-'], '_', $header));
-    }
-
-    private function normaliseImportDate(string $value): ?string
-    {
-        if (trim($value) === '') {
-            return null;
-        }
-
-        try {
-            if (is_numeric($value) && (float) $value > 20_000) {
-                return Carbon::create(1899, 12, 30)->addDays((int) $value)->toDateString();
-            }
-
-            return Carbon::parse($value)->toDateString();
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
     public function render()
     {
         $schoolId = $this->schoolId();
-        $search = trim($this->search);
         $perPage = in_array($this->perPage, [10, 15, 25, 50], true) ? $this->perPage : 15;
 
-        $students = Student::query()
-                ->where('school_id', $schoolId)
-                ->with([
-                    'enrollments' => fn ($enrollments) => $enrollments
-                        ->where('status', 'active')
-                        ->with('schoolClass'),
-                ])
-                ->when($search !== '', function ($query) use ($search): void {
-                    $query->where(function ($students) use ($search): void {
-                        $students->where('student_id', 'like', "%{$search}%")
-                            ->orWhere('admission_number', 'like', "%{$search}%")
-                            ->orWhere('first_name', 'like', "%{$search}%")
-                            ->orWhere('middle_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%")
-                            ->orWhereHas('enrollments.schoolClass', fn ($classes) => $classes->where('name', 'like', "%{$search}%"));
-                    });
-                })
-                ->when(filled($this->filterStatus), fn ($query) => $query->where('status', $this->filterStatus))
-                ->when(filled($this->filterGender), fn ($query) => $query->where('gender', $this->filterGender))
-                ->when(filled($this->filterClassId), fn ($query) => $query->whereHas('enrollments', fn ($enrollments) => $enrollments
-                    ->where('status', 'active')
-                    ->where('school_class_id', $this->filterClassId)));
+        $students = $this->filteredStudentsQuery($schoolId);
 
         match ($this->sortBy) {
             'name_asc' => $students->orderBy('first_name')->orderBy('last_name'),
@@ -759,5 +864,95 @@ class Index extends Component
                 ->orderBy('name')
                 ->get(),
         ]);
+    }
+
+    private function filteredStudentsQuery(int $schoolId)
+    {
+        $search = trim($this->search);
+
+        return Student::query()
+            ->where('school_id', $schoolId)
+            ->with([
+                'enrollments' => fn ($enrollments) => $enrollments
+                    ->where('status', 'active')
+                    ->with('schoolClass'),
+            ])
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($students) use ($search): void {
+                    $students->where('student_id', 'like', "%{$search}%")
+                        ->orWhere('admission_number', 'like', "%{$search}%")
+                        ->orWhere('first_name', 'like', "%{$search}%")
+                        ->orWhere('middle_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhereHas('enrollments.schoolClass', fn ($classes) => $classes->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->when(filled($this->filterStatus), fn ($query) => $query->where('status', $this->filterStatus))
+            ->when(filled($this->filterGender), fn ($query) => $query->where('gender', $this->filterGender))
+            ->when(filled($this->filterClassId), fn ($query) => $query->whereHas('enrollments', fn ($enrollments) => $enrollments
+                ->where('status', 'active')
+                ->where('school_class_id', $this->filterClassId)));
+    }
+
+    public function exportStudents(string $format = 'csv'): StreamedResponse|BinaryFileResponse
+    {
+        $this->authorize('viewAny', Student::class);
+        $schoolId = $this->ensureSchoolConfigured();
+        $format = $format === 'xlsx' ? 'xlsx' : 'csv';
+
+        $students = $this->filteredStudentsQuery($schoolId)
+            ->with(['parents' => fn ($parents) => $parents->orderByPivot('is_primary_contact', 'desc')])
+            ->latest()
+            ->get();
+
+        $rows = $students->map(function (Student $student): array {
+            $enrollment = $student->enrollments->first();
+            $guardian = $student->parents->first();
+
+            return [
+                $student->student_id,
+                $student->admission_number,
+                $student->first_name,
+                $student->middle_name,
+                $student->last_name,
+                $student->user?->email ?? '',
+                '',
+                $student->date_of_birth->toDateString(),
+                $student->gender,
+                $student->home_town,
+                $student->region,
+                $student->nationality,
+                $student->denomination,
+                $student->health_insurance_id,
+                $student->admission_date->toDateString(),
+                $student->status,
+                $enrollment?->schoolClass?->name ?? '',
+                $enrollment?->enrollment_type ?? '',
+                $student->previous_school_name,
+                $student->previous_school_city,
+                $student->previous_school_country,
+                $student->previous_school_gps_address,
+                $student->previous_school_phone,
+                $student->previous_school_last_class,
+                $guardian?->first_name ?? '',
+                $guardian?->last_name ?? '',
+                $guardian?->pivot->relationship ?? '',
+                $guardian?->user?->email ?? $guardian?->email ?? '',
+                $guardian?->phone ?? '',
+                filled($guardian?->pivot->information_date ?? null) ? Carbon::parse($guardian->pivot->information_date)->toDateString() : '',
+                $guardian?->gps_address ?? '',
+                $guardian?->city ?? '',
+                $guardian?->workplace ?? '',
+                $guardian?->ghana_card_number ?? '',
+                $student->has_allergies ? 'yes' : 'no',
+                $student->allergy_details,
+            ];
+        });
+
+        $filename = 'students-export-'.now()->format('Y-m-d').'.'.$format;
+
+        return $format === 'xlsx'
+            ? SpreadsheetExporter::xlsx($filename, self::IMPORT_HEADERS, $rows)
+            : SpreadsheetExporter::csv($filename, self::IMPORT_HEADERS, $rows);
     }
 }

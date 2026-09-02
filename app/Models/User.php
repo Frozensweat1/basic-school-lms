@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -63,4 +64,5 @@ class User extends Authenticatable
     public function student(): HasOne { return $this->hasOne(Student::class); }
     public function teacher(): HasOne { return $this->hasOne(Teacher::class); }
     public function parentGuardian(): HasOne { return $this->hasOne(ParentGuardian::class, 'user_id'); }
+    public function createdEmailCampaigns(): HasMany { return $this->hasMany(EmailCampaign::class, 'created_by'); }
 }

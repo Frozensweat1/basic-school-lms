@@ -18,7 +18,8 @@ class Gallery extends Component
         $albums = WebsiteGalleryAlbum::query()
             ->withCount('images')
             ->with(['images' => fn ($query) => $query
-                ->select(['id', 'album_id', 'path', 'caption', 'sort_order'])])
+                ->select(['id', 'album_id', 'path', 'caption', 'sort_order'])
+                ->limit(8)])
             ->latest()
             ->paginate(6);
 

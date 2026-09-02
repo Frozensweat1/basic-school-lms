@@ -5,7 +5,10 @@ namespace App\Livewire\LMS\Parents;
 use App\Models\ParentGuardian;
 use App\Models\School;
 use App\Models\Student;
+use App\Models\User;
+use App\Services\UserProfileService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
@@ -21,17 +24,33 @@ class Index extends Component
     use WithPagination;
 
     public bool $showFormModal = false;
+
     public bool $showDeleteModal = false;
 
     public ?int $editingId = null;
+
     public ?int $deletingId = null;
 
     public string $search = '';
+
     public string $firstName = '';
+
     public string $lastName = '';
+
     public string $phone = '';
+
     public string $email = '';
+
     public string $address = '';
+
+    public string $gpsAddress = '';
+
+    public string $city = '';
+
+    public string $workplace = '';
+
+    public string $ghanaCardNumber = '';
+
     public string $relationship = 'Guardian';
 
     /** @var array<int, string> */
@@ -71,8 +90,12 @@ class Index extends Component
         $this->firstName = $parent->first_name;
         $this->lastName = $parent->last_name;
         $this->phone = $parent->phone ?? '';
-        $this->email = $parent->email ?? '';
+        $this->email = $parent->user?->email ?? $parent->email ?? '';
         $this->address = $parent->address ?? '';
+        $this->gpsAddress = $parent->gps_address ?? '';
+        $this->city = $parent->city ?? '';
+        $this->workplace = $parent->workplace ?? '';
+        $this->ghanaCardNumber = $parent->ghana_card_number ?? '';
         $this->relationship = $parent->students()->first()?->pivot->relationship ?? 'Guardian';
         $this->studentIds = $parent->students()->pluck('students.id')->map(fn ($id) => (string) $id)->all();
         $this->resetValidation();
@@ -91,33 +114,63 @@ class Index extends Component
         $schoolId = $this->ensureSchoolConfigured();
 
         try {
+            $matchingAccountId = $parent?->user_id
+                ?? User::query()->whereRaw('LOWER(email) = ?', [strtolower(trim($this->email))])->value('id');
             $data = $this->validate([
                 'firstName' => ['required', 'string', 'max:100'],
                 'lastName' => ['required', 'string', 'max:100'],
-                'phone' => ['nullable', 'string', 'max:30'],
-                'email' => ['nullable', 'email', 'max:255'],
+                'phone' => [
+                    'required',
+                    'string',
+                    'max:30',
+                    function (string $attribute, mixed $value, \Closure $fail): void {
+                        if (strlen($this->normalizePhone((string) $value)) < 8) {
+                            $fail('Enter a valid phone number with at least 8 digits.');
+                        }
+                    },
+                ],
+                'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($matchingAccountId)],
                 'address' => ['nullable', 'string', 'max:1000'],
+                'gpsAddress' => ['nullable', 'string', 'max:100'],
+                'city' => ['nullable', 'string', 'max:100'],
+                'workplace' => ['nullable', 'string', 'max:255'],
+                'ghanaCardNumber' => ['nullable', 'string', 'max:50'],
                 'relationship' => ['required', 'string', 'max:50'],
                 'studentIds' => ['array'],
                 'studentIds.*' => [Rule::exists('students', 'id')->where('school_id', $schoolId)],
             ]);
 
-            $record = ParentGuardian::updateOrCreate(
-                ['id' => $parent?->id],
-                [
-                    'school_id' => $schoolId,
-                    'first_name' => $data['firstName'],
-                    'last_name' => $data['lastName'],
-                    'phone' => filled($data['phone']) ? $data['phone'] : null,
-                    'email' => filled($data['email']) ? $data['email'] : null,
-                    'address' => filled($data['address']) ? $data['address'] : null,
-                ],
-            );
-            $record->students()->sync(
-                collect($data['studentIds'])
-                    ->mapWithKeys(fn ($id) => [$id => ['relationship' => $data['relationship'], 'is_primary_contact' => false]])
-                    ->all(),
-            );
+            DB::transaction(function () use ($parent, $schoolId, $data): void {
+                $record = ParentGuardian::updateOrCreate(
+                    ['id' => $parent?->id],
+                    [
+                        'school_id' => $schoolId,
+                        'first_name' => $data['firstName'],
+                        'last_name' => $data['lastName'],
+                        'phone' => filled($data['phone']) ? $data['phone'] : null,
+                        'email' => strtolower(trim($data['email'])),
+                        'address' => filled($data['address']) ? $data['address'] : null,
+                        'gps_address' => filled($data['gpsAddress']) ? trim($data['gpsAddress']) : null,
+                        'city' => filled($data['city']) ? trim($data['city']) : null,
+                        'workplace' => filled($data['workplace']) ? trim($data['workplace']) : null,
+                        'ghana_card_number' => filled($data['ghanaCardNumber']) ? trim($data['ghanaCardNumber']) : null,
+                    ],
+                );
+
+                app(UserProfileService::class)->synchronizeAccount(
+                    $record,
+                    'parent',
+                    trim($data['firstName'].' '.$data['lastName']),
+                    $data['email'],
+                    $parent?->user_id ? null : $this->normalizePhone($data['phone']),
+                );
+
+                $record->students()->sync(
+                    collect($data['studentIds'])
+                        ->mapWithKeys(fn ($id) => [$id => ['relationship' => $data['relationship'], 'is_primary_contact' => false]])
+                        ->all(),
+                );
+            });
 
             $this->showFormModal = false;
             $this->resetForm();
@@ -189,9 +242,28 @@ class Index extends Component
 
     private function resetForm(): void
     {
-        $this->reset(['editingId', 'deletingId', 'firstName', 'lastName', 'phone', 'email', 'address', 'relationship', 'studentIds']);
+        $this->reset([
+            'editingId',
+            'deletingId',
+            'firstName',
+            'lastName',
+            'phone',
+            'email',
+            'address',
+            'gpsAddress',
+            'city',
+            'workplace',
+            'ghanaCardNumber',
+            'relationship',
+            'studentIds',
+        ]);
         $this->relationship = 'Guardian';
         $this->resetValidation();
+    }
+
+    private function normalizePhone(string $phone): string
+    {
+        return preg_replace('/\D+/', '', trim($phone)) ?? '';
     }
 
     private function schoolId(): int
@@ -227,6 +299,10 @@ class Index extends Component
                             ->orWhere('last_name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%")
                             ->orWhere('phone', 'like', "%{$search}%")
+                            ->orWhere('gps_address', 'like', "%{$search}%")
+                            ->orWhere('city', 'like', "%{$search}%")
+                            ->orWhere('workplace', 'like', "%{$search}%")
+                            ->orWhere('ghana_card_number', 'like', "%{$search}%")
                             ->orWhereHas('students', fn ($students) => $students
                                 ->where('first_name', 'like', "%{$search}%")
                                 ->orWhere('last_name', 'like', "%{$search}%")

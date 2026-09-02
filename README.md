@@ -205,10 +205,10 @@ npm run dev
 ```
 
 ```bash
-php artisan queue:work --tries=3
+php artisan queue:work --queue=emails,default --tries=3 --timeout=60
 ```
 
-The queue worker is important for queued announcement and notification delivery.
+The queue worker is important for email campaigns, announcements, and notification delivery.
 
 ## Demo accounts
 
@@ -260,7 +260,7 @@ QUEUE_CONNECTION=database
 Keep a worker running during development and configure Supervisor, systemd, or an equivalent process manager in production:
 
 ```bash
-php artisan queue:work --sleep=3 --tries=3 --timeout=120
+php artisan queue:work --queue=emails,default --sleep=3 --tries=3 --timeout=60
 ```
 
 ### Email
@@ -271,7 +271,7 @@ Local email uses the log driver, so messages are written to `storage/logs/larave
 MAIL_MAILER=log
 ```
 
-Configure a real SMTP or transactional mail provider in production and set `MAIL_FROM_ADDRESS` and `MAIL_FROM_NAME`.
+Configure a real SMTP or transactional mail provider in production and set `MAIL_FROM_ADDRESS` and `MAIL_FROM_NAME`. The LMS Email Centre stores one delivery record and queues one private message per recipient, so bulk recipients never see one another's addresses.
 
 ### Files
 
@@ -382,7 +382,7 @@ Run `php artisan storage:link`, confirm `APP_URL`, and verify write permissions 
 
 ### Jobs or notifications remain pending
 
-Confirm `QUEUE_CONNECTION`, then run `php artisan queue:work`. Inspect failed jobs with:
+Confirm `QUEUE_CONNECTION`, then run `php artisan queue:work --queue=emails,default`. Inspect failed jobs with:
 
 ```bash
 php artisan queue:failed

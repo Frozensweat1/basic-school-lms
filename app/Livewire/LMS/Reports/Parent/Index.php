@@ -27,12 +27,12 @@ class Index extends Component
         $parent = auth()->user()->parentGuardian;
         abort_unless(auth()->user()->hasRole('parent') && $parent, 403);
         $this->parent = $parent;
-        $this->studentId = (string) ($this->activeStudents()->value('students.id') ?? '');
+        $this->studentId = (string) ($this->wards()->value('students.id') ?? '');
     }
 
     public function updatedStudentId(): void
     {
-        abort_unless($this->studentId === '' || $this->activeStudents()->whereKey((int) $this->studentId)->exists(), 403);
+        abort_unless($this->studentId === '' || $this->wards()->whereKey((int) $this->studentId)->exists(), 403);
         $this->resetPage();
     }
 
@@ -54,7 +54,7 @@ class Index extends Component
 
     public function render()
     {
-        $students = $this->activeStudents()->orderBy('last_name')->orderBy('first_name')->get();
+        $students = $this->wards()->orderBy('last_name')->orderBy('first_name')->get();
         $student = $students->firstWhere('id', (int) $this->studentId);
         $filtered = ReportCard::query()
             ->with(['term.academicYear', 'academicYear', 'schoolClass'])
@@ -81,10 +81,9 @@ class Index extends Component
         ]);
     }
 
-    private function activeStudents()
+    private function wards()
     {
         return $this->parent->students()
-            ->where('students.school_id', $this->parent->school_id)
-            ->where('students.status', 'active');
+            ->where('students.school_id', $this->parent->school_id);
     }
 }

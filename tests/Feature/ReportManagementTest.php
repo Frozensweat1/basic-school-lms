@@ -71,6 +71,25 @@ class ReportManagementTest extends TestCase
         $this->assertSame('published', $report->fresh()->status);
     }
 
+    public function test_historical_report_can_be_generated_after_an_enrolment_is_completed(): void
+    {
+        [, , $term, $class, $student] = $this->reportSetup();
+
+        ClassEnrollment::query()
+            ->where('school_class_id', $class->id)
+            ->where('student_id', $student->id)
+            ->update([
+                'status' => ClassEnrollment::STATUS_COMPLETED,
+                'left_at' => $term->ends_at,
+            ]);
+
+        $report = app(ReportCardGenerator::class)->generate($student, $term, $class->id);
+
+        $this->assertSame($student->id, $report->student_id);
+        $this->assertSame($term->id, $report->term_id);
+        $this->assertSame($class->id, $report->school_class_id);
+    }
+
     public function test_review_comments_and_published_report_access_are_role_scoped(): void
     {
         [$admin, $school, $term, $class, $student, $classSubject] = $this->reportSetup();
@@ -98,7 +117,7 @@ class ReportManagementTest extends TestCase
         $studentUser = User::factory()->create();
         Role::create(['name' => 'student']);
         $studentUser->assignRole('student');
-        $student->update(['user_id' => $studentUser->id]);
+        $student->update(['user_id' => $studentUser->id, 'status' => 'graduated']);
 
         $parentUser = User::factory()->create();
         Role::create(['name' => 'parent']);

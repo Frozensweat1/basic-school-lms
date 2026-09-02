@@ -3,14 +3,13 @@
 namespace Database\Seeders;
 
 use App\Models\AcademicYear;
+use App\Models\Announcement;
 use App\Models\Assessment;
 use App\Models\AssessmentComponent;
 use App\Models\AssessmentScore;
 use App\Models\Assignment;
 use App\Models\AssignmentAttachment;
 use App\Models\AssignmentSubmission;
-use App\Models\Announcement;
-use App\Models\AttendanceRecord;
 use App\Models\ClassEnrollment;
 use App\Models\ClassSubject;
 use App\Models\Examination;
@@ -20,14 +19,15 @@ use App\Models\LessonProgress;
 use App\Models\LessonResource;
 use App\Models\ParentGuardian;
 use App\Models\Question;
+use App\Models\Quiz;
 use App\Models\QuizAnswer;
 use App\Models\QuizAttempt;
-use App\Models\Quiz;
 use App\Models\ReportCard;
 use App\Models\SchedulePeriod;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\SchoolSetting;
+use App\Models\Stream;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\SubjectResult;
@@ -54,43 +54,39 @@ class LmsDemoSeeder extends Seeder
             'brand_primary' => '#1e3a8a', 'brand_secondary' => '#0f172a', 'brand_accent' => '#f59e0b',
             'hero_title' => 'Where curious minds grow into confident leaders.', 'hero_subtitle' => 'Strong academics, creative learning, and a caring community help every child thrive.',
             'footer_text' => 'A caring learning community dedicated to academic excellence, creativity, and character.',
-        ] as $key => $value) SchoolSetting::firstOrCreate(['school_id' => $school->id, 'key' => $key], ['value' => ['value' => $value]]);
+        ] as $key => $value) {
+            SchoolSetting::firstOrCreate(['school_id' => $school->id, 'key' => $key], ['value' => ['value' => $value]]);
+        }
         $year = AcademicYear::where('school_id', $school->id)->where('name', '2026/2027')->firstOrFail();
         $term = $year->terms()->where('name', 'Term 1')->firstOrFail();
         $class = SchoolClass::where('academic_year_id', $year->id)->where('name', 'Basic 4')->firstOrFail();
         $subject = Subject::where('school_id', $school->id)->where('code', 'MATH')->firstOrFail();
 
-        $teacherUser = User::firstOrCreate(['email' => 'ama.mensah@brightstar.test'], ['name' => 'Ama Mensah', 'password' => Hash::make('password')]);
-        $teacherUser->syncRoles('teacher');
-        $teacher = Teacher::firstOrCreate(['employee_id' => 'T-001'], ['user_id' => $teacherUser->id, 'school_id' => $school->id, 'first_name' => 'Ama', 'last_name' => 'Mensah', 'email' => $teacherUser->email, 'phone' => '0200000001', 'employment_date' => '2024-09-01', 'status' => 'active']);
+        $teacherUser = $this->syncDemoUser('Ama Mensah', 'ama.mensah@brightstar.test', 'teacher');
+        $teacher = $this->syncDemoTeacher($teacherUser, 'T-001', ['school_id' => $school->id, 'first_name' => 'Ama', 'last_name' => 'Mensah', 'email' => $teacherUser->email, 'phone' => '0200000001', 'employment_date' => '2024-09-01', 'status' => 'active']);
         for ($number = 1; $number <= 10; $number++) {
             $admin = User::firstOrCreate(['email' => "admin{$number}@brightstar.test"], ['name' => "Demo Administrator {$number}", 'password' => Hash::make('password')]);
             $admin->syncRoles('super_admin');
-            $teacherAccount = User::firstOrCreate(['email' => "teacher{$number}@brightstar.test"], ['name' => "Demo Teacher {$number}", 'password' => Hash::make('password')]);
-            $teacherAccount->syncRoles('teacher');
-            Teacher::firstOrCreate(['employee_id' => sprintf('T-%03d', $number + 1)], ['user_id' => $teacherAccount->id, 'school_id' => $school->id, 'first_name' => 'Demo', 'last_name' => "Teacher {$number}", 'email' => $teacherAccount->email, 'phone' => sprintf('0200001%03d', $number), 'employment_date' => '2024-09-01', 'status' => 'active']);
+            $teacherAccount = $this->syncDemoUser("Demo Teacher {$number}", "teacher{$number}@brightstar.test", 'teacher');
+            $this->syncDemoTeacher($teacherAccount, sprintf('T-%03d', $number + 1), ['school_id' => $school->id, 'first_name' => 'Demo', 'last_name' => "Teacher {$number}", 'email' => $teacherAccount->email, 'phone' => sprintf('0200001%03d', $number), 'employment_date' => '2024-09-01', 'status' => 'active']);
         }
 
-        $studentUser = User::firstOrCreate(['email' => 'kojo.owusu@brightstar.test'], ['name' => 'Kojo Owusu', 'password' => Hash::make('password')]);
-        $studentUser->syncRoles('student');
-        $student = Student::firstOrCreate(['student_id' => 'STU-2026-001'], ['user_id' => $studentUser->id, 'school_id' => $school->id, 'admission_number' => 'ADM-2026-001', 'first_name' => 'Kojo', 'last_name' => 'Owusu', 'date_of_birth' => '2015-05-10', 'gender' => 'male', 'admission_date' => '2026-09-01', 'status' => 'active']);
+        $studentUser = $this->syncDemoUser('Kojo Owusu', 'kojo.owusu@brightstar.test', 'student');
+        $student = $this->syncDemoStudent($studentUser, 'STU-2026-001', ['school_id' => $school->id, 'admission_number' => 'ADM-2026-001', 'first_name' => 'Kojo', 'last_name' => 'Owusu', 'date_of_birth' => '2015-05-10', 'gender' => 'male', 'admission_date' => '2026-09-01', 'status' => 'active']);
         ClassEnrollment::firstOrCreate(['school_class_id' => $class->id, 'student_id' => $student->id], ['enrolled_at' => '2026-09-01', 'status' => 'active']);
 
         for ($number = 2; $number <= 10; $number++) {
-            $user = User::firstOrCreate(['email' => "student{$number}@brightstar.test"], ['name' => "Demo Student {$number}", 'password' => Hash::make('password')]);
-            $user->syncRoles('student');
-            $demoStudent = Student::firstOrCreate(['student_id' => sprintf('STU-2026-%03d', $number)], ['user_id' => $user->id, 'school_id' => $school->id, 'admission_number' => sprintf('ADM-2026-%03d', $number), 'first_name' => 'Demo', 'last_name' => "Student {$number}", 'date_of_birth' => '2015-05-10', 'gender' => $number % 2 ? 'male' : 'female', 'admission_date' => '2026-09-01', 'status' => 'active']);
+            $user = $this->syncDemoUser("Demo Student {$number}", "student{$number}@brightstar.test", 'student');
+            $demoStudent = $this->syncDemoStudent($user, sprintf('STU-2026-%03d', $number), ['school_id' => $school->id, 'admission_number' => sprintf('ADM-2026-%03d', $number), 'first_name' => 'Demo', 'last_name' => "Student {$number}", 'date_of_birth' => '2015-05-10', 'gender' => $number % 2 ? 'male' : 'female', 'admission_date' => '2026-09-01', 'status' => 'active']);
             ClassEnrollment::firstOrCreate(['school_class_id' => $class->id, 'student_id' => $demoStudent->id], ['enrolled_at' => '2026-09-01', 'status' => 'active']);
         }
 
-        $parentUser = User::firstOrCreate(['email' => 'adwoa.owusu@brightstar.test'], ['name' => 'Adwoa Owusu', 'password' => Hash::make('password')]);
-        $parentUser->syncRoles('parent');
-        $parent = ParentGuardian::firstOrCreate(['email' => $parentUser->email], ['user_id' => $parentUser->id, 'school_id' => $school->id, 'first_name' => 'Adwoa', 'last_name' => 'Owusu', 'phone' => '0200000002', 'address' => 'Accra, Ghana']);
+        $parentUser = $this->syncDemoUser('Adwoa Owusu', 'adwoa.owusu@brightstar.test', 'parent');
+        $parent = $this->syncDemoParent($parentUser, ['school_id' => $school->id, 'first_name' => 'Adwoa', 'last_name' => 'Owusu', 'phone' => '0200000002', 'address' => 'Accra, Ghana']);
         $parent->students()->syncWithoutDetaching([$student->id => ['relationship' => 'Mother', 'is_primary_contact' => true]]);
         for ($number = 2; $number <= 10; $number++) {
-            $parentAccount = User::firstOrCreate(['email' => "parent{$number}@brightstar.test"], ['name' => "Demo Parent {$number}", 'password' => Hash::make('password')]);
-            $parentAccount->syncRoles('parent');
-            $demoParent = ParentGuardian::firstOrCreate(['email' => $parentAccount->email], ['user_id' => $parentAccount->id, 'school_id' => $school->id, 'first_name' => 'Demo', 'last_name' => "Parent {$number}", 'phone' => sprintf('0200002%03d', $number), 'address' => 'Accra, Ghana']);
+            $parentAccount = $this->syncDemoUser("Demo Parent {$number}", "parent{$number}@brightstar.test", 'parent');
+            $demoParent = $this->syncDemoParent($parentAccount, ['school_id' => $school->id, 'first_name' => 'Demo', 'last_name' => "Parent {$number}", 'phone' => sprintf('0200002%03d', $number), 'address' => 'Accra, Ghana']);
             $demoStudent = Student::where('student_id', sprintf('STU-2026-%03d', $number))->firstOrFail();
             $demoParent->students()->syncWithoutDetaching([$demoStudent->id => ['relationship' => 'Parent', 'is_primary_contact' => true]]);
         }
@@ -130,6 +126,69 @@ class LmsDemoSeeder extends Seeder
         $this->seedExpandedDemoData($school, $year, $term, $teacherUser);
     }
 
+    private function syncDemoUser(string $name, string $email, string $role): User
+    {
+        $user = User::query()
+            ->whereRaw('LOWER(email) = ?', [strtolower($email)])
+            ->first();
+
+        if ($user) {
+            $user->forceFill(['name' => $name, 'email' => strtolower($email)])->save();
+        } else {
+            $user = User::create([
+                'name' => $name,
+                'email' => strtolower($email),
+                'password' => Hash::make('password'),
+            ]);
+        }
+
+        $user->syncRoles($role);
+
+        return $user;
+    }
+
+    /** @param array<string, mixed> $attributes */
+    private function syncDemoTeacher(User $user, string $employeeId, array $attributes): Teacher
+    {
+        $teacher = Teacher::withTrashed()
+            ->where('user_id', $user->id)
+            ->orWhere('employee_id', $employeeId)
+            ->first() ?? new Teacher;
+
+        $teacher->fill($attributes + ['user_id' => $user->id, 'employee_id' => $employeeId])->save();
+        $teacher->restore();
+
+        return $teacher;
+    }
+
+    /** @param array<string, mixed> $attributes */
+    private function syncDemoStudent(User $user, string $studentId, array $attributes): Student
+    {
+        $student = Student::withTrashed()
+            ->where('user_id', $user->id)
+            ->orWhere('student_id', $studentId)
+            ->first() ?? new Student;
+
+        $student->fill($attributes + ['user_id' => $user->id, 'student_id' => $studentId])->save();
+        $student->restore();
+
+        return $student;
+    }
+
+    /** @param array<string, mixed> $attributes */
+    private function syncDemoParent(User $user, array $attributes): ParentGuardian
+    {
+        $parent = ParentGuardian::withTrashed()
+            ->where('user_id', $user->id)
+            ->orWhereRaw('LOWER(email) = ?', [strtolower($user->email)])
+            ->first() ?? new ParentGuardian;
+
+        $parent->fill($attributes + ['user_id' => $user->id, 'email' => strtolower($user->email)])->save();
+        $parent->restore();
+
+        return $parent;
+    }
+
     /** Seed the complete learning journey with repeatable demo records. */
     private function seedExpandedDemoData(School $school, AcademicYear $year, $term, User $author): void
     {
@@ -137,10 +196,12 @@ class LmsDemoSeeder extends Seeder
         $students = Student::where('school_id', $school->id)->where('status', 'active')->orderBy('id')->get();
         $classes = SchoolClass::where('academic_year_id', $year->id)->where('status', 'active')->orderBy('id')->get();
         $subjects = Subject::where('school_id', $school->id)->where('is_active', true)->orderBy('id')->get();
-        if ($teachers->isEmpty() || $students->isEmpty() || $classes->isEmpty() || $subjects->isEmpty()) return;
+        if ($teachers->isEmpty() || $students->isEmpty() || $classes->isEmpty() || $subjects->isEmpty()) {
+            return;
+        }
 
         foreach (['North Campus', 'South Campus', 'Online Learning'] as $streamName) {
-            \App\Models\Stream::firstOrCreate(['school_id' => $school->id, 'name' => $streamName], ['is_active' => true]);
+            Stream::firstOrCreate(['school_id' => $school->id, 'name' => $streamName], ['is_active' => true]);
         }
 
         $classSubjects = collect();
@@ -151,7 +212,9 @@ class LmsDemoSeeder extends Seeder
                     ['school_class_id' => $class->id, 'subject_id' => $subject->id],
                     ['teacher_id' => $teacher->id]
                 );
-                if (!$classSubject->teacher_id) $classSubject->update(['teacher_id' => $teacher->id]);
+                if (! $classSubject->teacher_id) {
+                    $classSubject->update(['teacher_id' => $teacher->id]);
+                }
                 $class->teachers()->syncWithoutDetaching([$teacher->id => ['role' => 'subject teacher']]);
                 $classSubjects->push($classSubject->fresh());
             }
@@ -180,7 +243,9 @@ class LmsDemoSeeder extends Seeder
                 AssignmentAttachment::firstOrCreate(['assignment_id' => $assignment->id, 'name' => 'Practice worksheet'], ['disk' => 'public', 'path' => 'demo/practice-worksheet.pdf', 'size' => 12000]);
                 foreach ($students as $studentIndex => $student) {
                     $submission = AssignmentSubmission::firstOrCreate(['assignment_id' => $assignment->id, 'student_id' => $student->id], ['submission_text' => $studentIndex % 2 === 0 ? 'Completed practice with working shown.' : null, 'status' => $studentIndex % 2 === 0 ? 'submitted' : 'draft', 'submitted_at' => $studentIndex % 2 === 0 ? now()->subDays(1) : null, 'score' => $studentIndex % 2 === 0 ? 15 + ($studentIndex % 6) : null, 'feedback' => $studentIndex % 2 === 0 ? 'Good effort.' : null, 'graded_by' => $studentIndex % 2 === 0 ? $author->id : null, 'graded_at' => $studentIndex % 2 === 0 ? now() : null]);
-                    if ($studentIndex % 2 === 0) SubmissionAttachment::firstOrCreate(['assignment_submission_id' => $submission->id, 'name' => 'Learner response'], ['disk' => 'public', 'path' => 'demo/learner-response.pdf', 'size' => 9000]);
+                    if ($studentIndex % 2 === 0) {
+                        SubmissionAttachment::firstOrCreate(['assignment_submission_id' => $submission->id, 'name' => 'Learner response'], ['disk' => 'public', 'path' => 'demo/learner-response.pdf', 'size' => 9000]);
+                    }
                 }
 
                 $quiz = Quiz::firstOrCreate(
@@ -204,10 +269,14 @@ class LmsDemoSeeder extends Seeder
                     }
                     $questions->push($question);
                 }
-                foreach ($questions->take(3) as $questionIndex => $question) $quiz->quizQuestions()->firstOrCreate(['question_id' => $question->id], ['sequence' => $questionIndex + 1]);
+                foreach ($questions->take(3) as $questionIndex => $question) {
+                    $quiz->quizQuestions()->firstOrCreate(['question_id' => $question->id], ['sequence' => $questionIndex + 1]);
+                }
                 foreach ($students as $studentIndex => $student) {
                     $attempt = QuizAttempt::firstOrCreate(['quiz_id' => $quiz->id, 'student_id' => $student->id, 'attempt_number' => 1], ['started_at' => now()->subDays(2), 'submitted_at' => $studentIndex % 2 === 0 ? now()->subDays(2) : null, 'score' => $studentIndex % 2 === 0 ? 2 : null, 'status' => $studentIndex % 2 === 0 ? 'submitted' : 'in_progress']);
-                    foreach ($quiz->quizQuestions as $quizQuestion) QuizAnswer::firstOrCreate(['quiz_attempt_id' => $attempt->id, 'question_id' => $quizQuestion->question_id], ['answer' => ['value' => (string) ($quizQuestion->question_id)], 'score' => $attempt->status === 'submitted' ? 1 : null, 'graded_by' => $attempt->status === 'submitted' ? $author->id : null, 'graded_at' => $attempt->status === 'submitted' ? now() : null]);
+                    foreach ($quiz->quizQuestions as $quizQuestion) {
+                        QuizAnswer::firstOrCreate(['quiz_attempt_id' => $attempt->id, 'question_id' => $quizQuestion->question_id], ['answer' => ['value' => (string) ($quizQuestion->question_id)], 'score' => $attempt->status === 'submitted' ? 1 : null, 'graded_by' => $attempt->status === 'submitted' ? $author->id : null, 'graded_at' => $attempt->status === 'submitted' ? now() : null]);
+                    }
                 }
             }
         }
@@ -215,7 +284,9 @@ class LmsDemoSeeder extends Seeder
         $component = AssessmentComponent::where('term_id', $term->id)->where('name', 'Class Exercise')->firstOrFail();
         foreach ($classSubjects->take(10) as $index => $classSubject) {
             $assessment = Assessment::firstOrCreate(['class_subject_id' => $classSubject->id, 'term_id' => $term->id, 'title' => 'Term 1 continuous assessment'], ['assessment_component_id' => $component->id, 'teacher_id' => $classSubject->teacher_id, 'max_score' => 100, 'assessed_at' => now()->subDays(4)->toDateString(), 'status' => 'published']);
-            foreach ($students as $studentIndex => $student) AssessmentScore::firstOrCreate(['assessment_id' => $assessment->id, 'student_id' => $student->id], ['score' => 55 + (($studentIndex + $index) % 40), 'comment' => 'Consistent class participation.']);
+            foreach ($students as $studentIndex => $student) {
+                AssessmentScore::firstOrCreate(['assessment_id' => $assessment->id, 'student_id' => $student->id], ['score' => 55 + (($studentIndex + $index) % 40), 'comment' => 'Consistent class participation.']);
+            }
             foreach ($students as $student) {
                 $total = 55 + (($student->id + $index) % 40);
                 $scale = GradingScale::where('school_id', $school->id)->where('minimum', '<=', $total)->where('maximum', '>=', $total)->first();
@@ -225,7 +296,9 @@ class LmsDemoSeeder extends Seeder
 
         foreach ($students as $student) {
             $enrollment = ClassEnrollment::where('student_id', $student->id)->where('status', 'active')->first();
-            if (!$enrollment) continue;
+            if (! $enrollment) {
+                continue;
+            }
             ReportCard::updateOrCreate(['student_id' => $student->id, 'term_id' => $term->id], ['academic_year_id' => $year->id, 'school_class_id' => $enrollment->school_class_id, 'teacher_comment' => 'A positive term of learning.', 'headteacher_comment' => 'Well done. Keep learning.', 'attendance_percentage' => 92, 'status' => 'published', 'generated_at' => now(), 'published_at' => now()]);
             foreach (range(1, 10) as $day) {
                 $date = now()->subDays($day)->startOfDay()->toDateTimeString();
@@ -237,22 +310,32 @@ class LmsDemoSeeder extends Seeder
             ['name' => 'Period 1', 'starts_at' => '08:00', 'ends_at' => '08:45', 'sequence' => 1], ['name' => 'Period 2', 'starts_at' => '08:50', 'ends_at' => '09:35', 'sequence' => 2], ['name' => 'Period 3', 'starts_at' => '09:40', 'ends_at' => '10:25', 'sequence' => 3], ['name' => 'Period 4', 'starts_at' => '10:45', 'ends_at' => '11:30', 'sequence' => 4], ['name' => 'Period 5', 'starts_at' => '11:35', 'ends_at' => '12:20', 'sequence' => 5], ['name' => 'Period 6', 'starts_at' => '12:25', 'ends_at' => '13:10', 'sequence' => 6],
         ])->map(fn ($period) => SchedulePeriod::firstOrCreate(['school_id' => $school->id, 'name' => $period['name']], $period));
         $timetable = Timetable::firstOrCreate(['academic_year_id' => $year->id, 'term_id' => $term->id, 'name' => 'Term 1 master timetable'], ['status' => 'published']);
-        foreach ($classes as $classIndex => $class) foreach ($subjects as $subjectIndex => $subject) {
-            $classSubject = $classSubjects->first(fn ($item) => $item->school_class_id === $class->id && $item->subject_id === $subject->id);
-            if (!$classSubject) continue;
-            $period = $periods[$subjectIndex % $periods->count()];
-            TimetableEntry::firstOrCreate(['timetable_id' => $timetable->id, 'school_class_id' => $class->id, 'day_of_week' => ($classIndex % 5) + 1, 'schedule_period_id' => $period->id], ['class_subject_id' => $classSubject->id, 'teacher_id' => $classSubject->teacher_id, 'room' => 'Room '.(($subjectIndex % 6) + 1)]);
+        foreach ($classes as $classIndex => $class) {
+            foreach ($subjects as $subjectIndex => $subject) {
+                $classSubject = $classSubjects->first(fn ($item) => $item->school_class_id === $class->id && $item->subject_id === $subject->id);
+                if (! $classSubject) {
+                    continue;
+                }
+                $period = $periods[$subjectIndex % $periods->count()];
+                TimetableEntry::firstOrCreate(['timetable_id' => $timetable->id, 'school_class_id' => $class->id, 'day_of_week' => ($classIndex % 5) + 1, 'schedule_period_id' => $period->id], ['class_subject_id' => $classSubject->id, 'teacher_id' => $classSubject->teacher_id, 'room' => 'Room '.(($subjectIndex % 6) + 1)]);
+            }
         }
-        foreach ($classSubjects->take(10) as $index => $classSubject) Examination::firstOrCreate(['school_id' => $school->id, 'academic_year_id' => $year->id, 'term_id' => $term->id, 'class_subject_id' => $classSubject->id, 'title' => 'Term 1 examination'], ['teacher_id' => $classSubject->teacher_id, 'description' => 'End of term examination.', 'exam_date' => now()->addDays(30 + $index)->toDateString(), 'duration_minutes' => 90, 'max_score' => 100, 'status' => 'scheduled']);
+        foreach ($classSubjects->take(10) as $index => $classSubject) {
+            Examination::firstOrCreate(['school_id' => $school->id, 'academic_year_id' => $year->id, 'term_id' => $term->id, 'class_subject_id' => $classSubject->id, 'title' => 'Term 1 examination'], ['teacher_id' => $classSubject->teacher_id, 'description' => 'End of term examination.', 'exam_date' => now()->addDays(30 + $index)->toDateString(), 'duration_minutes' => 90, 'max_score' => 100, 'status' => 'scheduled']);
+        }
 
-        foreach (range(1, 10) as $number) Announcement::firstOrCreate(['school_id' => $school->id, 'title' => "Demo school announcement {$number}"], ['created_by' => $author->id, 'content' => 'This is a seeded school update for demonstration purposes.', 'audience' => 'school', 'published_at' => now()->subDays($number)]);
+        foreach (range(1, 10) as $number) {
+            Announcement::firstOrCreate(['school_id' => $school->id, 'title' => "Demo school announcement {$number}"], ['created_by' => $author->id, 'content' => 'This is a seeded school update for demonstration purposes.', 'audience' => 'school', 'published_at' => now()->subDays($number)]);
+        }
         foreach ($students->take(5) as $student) {
-            if ($student->user && !$student->user->notifications()->where('type', LmsNotification::class)->whereJsonContains('data->title', 'Welcome to the LMS')->exists()) {
+            if ($student->user && ! $student->user->notifications()->where('type', LmsNotification::class)->whereJsonContains('data->title', 'Welcome to the LMS')->exists()) {
                 $student->user->notify(new LmsNotification('Welcome to the LMS', 'Your demo learning workspace is ready.', route('lms.dashboard.student')));
             }
         }
-        if (!DB::table('audit_logs')->where('school_id', $school->id)->where('event', 'demo.seeded')->exists()) {
-            foreach (range(1, 10) as $number) DB::table('audit_logs')->insert(['user_id' => $author->id, 'school_id' => $school->id, 'event' => 'demo.seeded', 'old_values' => null, 'new_values' => json_encode(['record' => $number]), 'created_at' => now(), 'updated_at' => now()]);
+        if (! DB::table('audit_logs')->where('school_id', $school->id)->where('event', 'demo.seeded')->exists()) {
+            foreach (range(1, 10) as $number) {
+                DB::table('audit_logs')->insert(['user_id' => $author->id, 'school_id' => $school->id, 'event' => 'demo.seeded', 'old_values' => null, 'new_values' => json_encode(['record' => $number]), 'created_at' => now(), 'updated_at' => now()]);
+            }
         }
     }
 }

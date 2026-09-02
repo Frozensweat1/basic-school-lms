@@ -6,9 +6,87 @@
             <p class="mt-1 text-sm text-slate-600">Maintain teacher employment profiles and teaching assignments.</p>
         </div>
         @can('create', App\Models\Teacher::class)
-            <x-button wire:click="create" target="create" :loading="true" icon="plus">Add teacher</x-button>
+            <div class="flex flex-wrap gap-3">
+                <x-button wire:click="exportTeachers('csv')" variant="ghost" target="exportTeachers('csv')" :loading="true">Export CSV</x-button>
+                <x-button wire:click="exportTeachers('xlsx')" variant="ghost" target="exportTeachers('xlsx')" :loading="true">Export Excel</x-button>
+                <x-button wire:click="openImport" variant="secondary" target="openImport" :loading="true">Import teachers</x-button>
+                <x-button wire:click="create" target="create" :loading="true" icon="plus">Add teacher</x-button>
+            </div>
         @endcan
     </div>
+
+    @if ($showImportForm)
+        <section class="overflow-hidden rounded-2xl border border-blue-200 bg-white shadow-sm" aria-labelledby="teacher-import-title">
+            <div class="flex flex-col gap-4 border-b border-blue-100 bg-blue-50/70 px-5 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Bulk onboarding</p>
+                    <h3 id="teacher-import-title" class="mt-1 text-lg font-bold text-slate-900">Import teachers</h3>
+                    <p class="mt-1 text-sm text-slate-600">Upload a CSV or standard Excel (.xlsx) file. Every row is validated before any teachers are added.</p>
+                </div>
+
+                <div class="flex shrink-0 gap-3">
+                    <x-button wire:click="downloadImportTemplate" variant="ghost" size="sm" target="downloadImportTemplate" :loading="true">Download CSV template</x-button>
+                    <x-button wire:click="closeImport" variant="ghost" size="sm" target="closeImport" :loading="true">Cancel</x-button>
+                </div>
+            </div>
+
+            <form wire:submit="importTeachers" class="space-y-5 p-5 sm:p-6">
+                <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
+                    <label for="teacher-import-file" class="block text-sm font-semibold text-slate-700">Teacher import file</label>
+                    <input
+                        id="teacher-import-file"
+                        wire:model="importFile"
+                        type="file"
+                        accept=".csv,.txt,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        class="mt-2 block w-full cursor-pointer rounded-lg border border-slate-300 bg-white text-sm text-slate-600 file:mr-4 file:cursor-pointer file:border-0 file:bg-blue-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-800"
+                    >
+                    <p class="mt-2 text-xs text-slate-500">CSV, TXT, or XLSX up to 10 MB; up to 500 teachers per file.</p>
+                    <p wire:loading.flex wire:target="importFile" class="mt-2 items-center gap-2 text-sm font-medium text-blue-700">
+                        <svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66" stroke-linecap="round"/></svg>
+                        Uploading file…
+                    </p>
+                    @error('importFile')
+                        <p class="mt-2 text-sm text-rose-700">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="min-w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700">
+                            <tr>
+                                <th class="px-3 py-2 font-semibold">Required columns</th>
+                                <th class="px-3 py-2 font-semibold">Optional columns</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="px-3 py-3 font-mono">employee_id, first_name, last_name, email, temporary_password</td>
+                                <td class="px-3 py-3 font-mono">middle_name, phone, employment_date, status, gender, date_of_birth, nationality, postal_address, residential_address, gps_address, marital_status, religion, emergency_contact_name, emergency_contact_phone, ssnit_number, ghana_card_number</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-xs text-slate-500">Use dates in YYYY-MM-DD format. Teacher passwords must contain at least 10 characters. Gender is male, female, or other; marital status is single, married, divorced, or widowed. Dependants, qualifications, work experience, and referees can be added afterwards from the teacher's edit form.</p>
+
+                @if ($importErrors)
+                    <section class="rounded-xl border border-amber-200 bg-amber-50 p-4" aria-labelledby="teacher-import-errors-title">
+                        <h4 id="teacher-import-errors-title" class="font-semibold text-amber-950">The file was not imported</h4>
+                        <p class="mt-1 text-sm text-amber-800">Correct these issues, then upload the file again.</p>
+                        <ul class="mt-3 list-disc space-y-1 pl-5 text-sm text-amber-900">
+                            @foreach ($importErrors as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </section>
+                @endif
+
+                <div class="flex justify-end gap-3 border-t border-slate-100 pt-5">
+                    <x-button wire:click="closeImport" type="button" variant="ghost" target="closeImport" :loading="true">Cancel</x-button>
+                    <x-button type="submit" icon="save" target="importTeachers" :loading="true">Import teachers</x-button>
+                </div>
+            </form>
+        </section>
+    @endif
 
     @php
         $filtersActive = filled($search) || filled($filterStatus) || filled($filterAssignment);
@@ -85,6 +163,10 @@
                             </td>
                             <td class="px-5 py-4">
                                 <div class="flex justify-end gap-2">
+                                    @can('viewAny', App\Models\EmailCampaign::class)
+                                        <x-ui.icon-link :href="route('lms.emails.index', ['recipient_type' => 'staff', 'recipient_id' => $teacher->id])" icon="mail"
+                                            label="Email {{ $teacher->first_name }} {{ $teacher->last_name }}" />
+                                    @endcan
                                     @can('update', $teacher)
                                         <x-ui.icon-button wire:click="edit({{ $teacher->id }})" icon="edit"
                                             label="Edit {{ $teacher->first_name }} {{ $teacher->last_name }}"
@@ -110,7 +192,7 @@
     </div>
     <x-pagination :paginator="$teachers" />
 
-    <x-modal :show="$showFormModal" :title="$editingId ? 'Edit teacher' : 'Add teacher'" close-action="closeModals" max-width="xl">
+    <x-modal :show="$showFormModal" :title="$editingId ? 'Edit teacher' : 'Add teacher'" close-action="closeModals" max-width="3xl">
         <form wire:submit="save" class="space-y-5">
             <div class="grid gap-5 sm:grid-cols-2">
                 <div><label for="employee-id" class="block text-sm font-medium">Employee ID</label><input
@@ -161,6 +243,18 @@
                     @enderror
                 </div>
             </div>
+            <div class="rounded-xl border border-blue-100 bg-blue-50/70 p-4">
+                <p class="text-sm font-semibold text-blue-950">Portal login</p>
+                <p class="mt-1 text-xs text-blue-800">The email above is the teacher's username. {{ $editingId ? 'Leave the password blank to keep the current password.' : 'Set an initial password of at least 10 characters.' }}</p>
+                <label for="teacher-password" class="mt-3 block text-sm font-medium text-slate-800">
+                    {{ $editingId ? 'New password (optional)' : 'Initial password' }}
+                </label>
+                <input wire:model.blur="password" id="teacher-password" type="password" autocomplete="new-password"
+                    class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
+                @error('password')
+                    <p class="mt-1 text-sm text-rose-700">{{ $message }}</p>
+                @enderror
+            </div>
             <div><label for="teacher-status" class="block text-sm font-medium">Status</label><select
                     wire:model.blur="status" id="teacher-status"
                     class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
@@ -168,6 +262,15 @@
                     <option value="inactive">Inactive</option>
                     <option value="retired">Retired</option>
                 </select></div>
+
+            <x-lms.teacher-staff-fields
+                prefix="teacher-form"
+                :dependants="$dependants"
+                :qualifications="$qualifications"
+                :work-experiences="$workExperiences"
+                :referees="$referees"
+            />
+
             <div class="flex justify-end gap-3 pt-2"><x-button wire:click="closeModals" type="button" variant="ghost"
                     target="closeModals" :loading="true">Cancel</x-button><x-button type="submit" icon="save"
                     target="save" :loading="true">Save teacher</x-button></div>

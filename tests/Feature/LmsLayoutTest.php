@@ -35,7 +35,9 @@ class LmsLayoutTest extends TestCase
             ->assertSee('id="sidebar-backdrop"', false)
             ->assertSee('aria-controls="lms-sidebar"', false)
             ->assertSee(route('lms.users.index'), false)
-            ->assertSee(route('lms.academic-years.index'), false);
+            ->assertSee(route('lms.academic-years.index'), false)
+            ->assertSee(route('lms.emails.index'), false)
+            ->assertSee(route('lms.students.promotions.index'), false);
     }
 
     public function test_non_administrators_do_not_receive_administrative_sidebar_links(): void
@@ -55,6 +57,8 @@ class LmsLayoutTest extends TestCase
             ->assertDontSee(route('lms.school-setup'), false)
             ->assertDontSee(route('lms.academic-years.index'), false)
             ->assertDontSee(route('lms.students.index'), false)
+            ->assertDontSee(route('lms.emails.index'), false)
+            ->assertDontSee(route('lms.students.promotions.index'), false)
             ->assertDontSee('Academic Setup')
             ->assertDontSee('Administration');
     }
@@ -67,6 +71,8 @@ class LmsLayoutTest extends TestCase
         $this->assertSame('Quiz Questions', $titles->title('lms.quizzes.teacher.questions.index'));
         $this->assertSame('Assignment Submissions', $titles->title('lms.assignments.teacher.grade'));
         $this->assertSame('Timetable Entries', $titles->title('lms.timetables.entries.index'));
+        $this->assertSame('Email Centre', $titles->title('lms.emails.index'));
+        $this->assertSame('Student Promotions', $titles->title('lms.students.promotions.index'));
         $this->assertSame('Website Settings', $titles->title('lms.website.settings'));
     }
 }

@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -36,10 +37,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             $user instanceof MustVerifyEmail) {
             $this->updateVerifiedUser($user, $input);
         } else {
-            $user->forceFill([
-                'name' => $input['name'],
-                'email' => $input['email'],
-            ])->save();
+            $this->updateIdentity($user, $input['name'], $input['email']);
         }
     }
 
@@ -50,12 +48,21 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
      */
     protected function updateVerifiedUser(User $user, array $input): void
     {
-        $user->forceFill([
-            'name' => $input['name'],
-            'email' => $input['email'],
-            'email_verified_at' => null,
-        ])->save();
+        $this->updateIdentity($user, $input['name'], $input['email'], true);
 
         $user->sendEmailVerificationNotification();
+    }
+
+    private function updateIdentity(User $user, string $name, string $email, bool $unverify = false): void
+    {
+        DB::transaction(function () use ($user, $name, $email, $unverify): void {
+            $user->forceFill([
+                'name' => $name,
+                'email' => strtolower(trim($email)),
+            ] + ($unverify ? ['email_verified_at' => null] : []))->save();
+
+            $user->teacher?->update(['email' => $user->email]);
+            $user->parentGuardian?->update(['email' => $user->email]);
+        });
     }
 }

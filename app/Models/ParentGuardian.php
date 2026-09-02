@@ -21,6 +21,10 @@ class ParentGuardian extends Model
         'phone',
         'email',
         'address',
+        'gps_address',
+        'city',
+        'workplace',
+        'ghana_card_number',
     ];
 
     public function user(): BelongsTo
@@ -31,7 +35,7 @@ class ParentGuardian extends Model
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(Student::class, 'parent_student', 'parent_id', 'student_id')
-            ->withPivot(['relationship', 'is_primary_contact'])
+            ->withPivot(['relationship', 'is_primary_contact', 'information_date'])
             ->withTimestamps();
     }
     public function school(): BelongsTo { return $this->belongsTo(School::class); }

@@ -40,11 +40,27 @@ class SchoolClass extends Model
     public function teachers(): BelongsToMany
     {
         return $this->belongsToMany(Teacher::class, 'class_teachers')
+            ->withPivot('role')
             ->withTimestamps();
     }
 
-    public function stream(): BelongsTo { return $this->belongsTo(Stream::class); }
-    public function classSubjects(): HasMany { return $this->hasMany(ClassSubject::class); }
-    public function enrollments(): HasMany { return $this->hasMany(ClassEnrollment::class); }
-    public function attendanceRecords(): HasMany { return $this->hasMany(AttendanceRecord::class); }
+    public function stream(): BelongsTo
+    {
+        return $this->belongsTo(Stream::class);
+    }
+
+    public function classSubjects(): HasMany
+    {
+        return $this->hasMany(ClassSubject::class);
+    }
+
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(ClassEnrollment::class);
+    }
+
+    public function attendanceRecords(): HasMany
+    {
+        return $this->hasMany(AttendanceRecord::class);
+    }
 }

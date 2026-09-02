@@ -102,7 +102,7 @@ class Index extends Component
                 ->whereKey((int) $this->generationStudentId)
                 ->whereHas('enrollments', fn (Builder $query) => $query
                     ->where('school_class_id', $class->id)
-                    ->where('status', 'active'))
+                    ->enrolledDuring($term->starts_at, $term->ends_at))
                 ->firstOrFail();
 
             $report = $generator->generate($student, $term, $class->id);
@@ -127,10 +127,13 @@ class Index extends Component
 
         try {
             [$term, $class] = $this->validatedGenerationScope();
-            $enrollments = $class->enrollments()->with('student')->where('status', 'active')->get();
+            $enrollments = $class->enrollments()
+                ->with('student')
+                ->enrolledDuring($term->starts_at, $term->ends_at)
+                ->get();
 
             if ($enrollments->isEmpty()) {
-                throw ValidationException::withMessages(['generationClassId' => 'The selected class has no active students.']);
+                throw ValidationException::withMessages(['generationClassId' => 'The selected class had no enrolled students during this term.']);
             }
 
             foreach ($enrollments as $enrollment) {
@@ -272,10 +275,10 @@ class Index extends Component
             : collect();
         $generationStudents = filled($this->generationClassId)
             ? $this->scopedStudents()
-                ->where('status', 'active')
                 ->whereHas('enrollments', fn (Builder $query) => $query
                     ->where('school_class_id', (int) $this->generationClassId)
-                    ->where('status', 'active'))
+                    ->when($generationTerm, fn (Builder $enrollments) => $enrollments
+                        ->enrolledDuring($generationTerm->starts_at, $generationTerm->ends_at)))
                 ->orderBy('last_name')->orderBy('first_name')->get()
             : collect();
 

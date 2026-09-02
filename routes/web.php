@@ -1,101 +1,104 @@
 <?php
 
+use App\Http\Controllers\SitemapController;
 use App\Livewire\LMS\AcademicYears\Index as AcademicYearsIndex;
 use App\Livewire\LMS\Announcements\Admin\Manage as AdminAnnouncementsManage;
-use App\Livewire\LMS\Announcements\Teacher\Manage as TeacherAnnouncementsManage;
 use App\Livewire\LMS\Announcements\Feed as AnnouncementsFeed;
-use App\Livewire\LMS\AuditLogs\Index as AuditLogsIndex;
+use App\Livewire\LMS\Announcements\Teacher\Manage as TeacherAnnouncementsManage;
+use App\Livewire\LMS\AssessmentComponents\Index as AssessmentComponentsIndex;
 use App\Livewire\LMS\Assessments\Admin\Index as AdminAssessmentsIndex;
 use App\Livewire\LMS\Assessments\Teacher\Index as TeacherAssessmentsIndex;
-use App\Livewire\LMS\AssessmentComponents\Index as AssessmentComponentsIndex;
 use App\Livewire\LMS\AssessmentScores\Admin\Index as AdminAssessmentScoresIndex;
 use App\Livewire\LMS\AssessmentScores\Teacher\Index as TeacherAssessmentScoresIndex;
 use App\Livewire\LMS\Assignments\Admin\Index as AdminAssignmentsIndex;
-use App\Livewire\LMS\Assignments\Teacher\Index as TeacherAssignmentsIndex;
-use App\Livewire\LMS\Assignments\Teacher\Grade as TeacherAssignmentGrade;
-use App\Livewire\LMS\Assignments\Student\Index as StudentAssignmentsIndex;
 use App\Livewire\LMS\Assignments\Parent\Index as ParentAssignmentsIndex;
+use App\Livewire\LMS\Assignments\Student\Index as StudentAssignmentsIndex;
+use App\Livewire\LMS\Assignments\Teacher\Grade as TeacherAssignmentGrade;
+use App\Livewire\LMS\Assignments\Teacher\Index as TeacherAssignmentsIndex;
 use App\Livewire\LMS\Attendance\Admin\Overview as AdminAttendanceOverview;
-use App\Livewire\LMS\Attendance\Teacher\Record as TeacherAttendanceRecord;
-use App\Livewire\LMS\Attendance\Student\Show as StudentAttendanceShow;
 use App\Livewire\LMS\Attendance\Parent\Show as ParentAttendanceShow;
+use App\Livewire\LMS\Attendance\Student\Show as StudentAttendanceShow;
+use App\Livewire\LMS\Attendance\Teacher\Record as TeacherAttendanceRecord;
+use App\Livewire\LMS\AuditLogs\Index as AuditLogsIndex;
 use App\Livewire\LMS\Classes\Index as ClassesIndex;
 use App\Livewire\LMS\ClassSubjects\Index as ClassSubjectsIndex;
 use App\Livewire\LMS\Dashboard\Admin as AdminDashboard;
-use App\Livewire\LMS\Dashboard\Teacher as TeacherDashboard;
-use App\Livewire\LMS\Dashboard\Student as StudentDashboard;
 use App\Livewire\LMS\Dashboard\ParentDashboard;
+use App\Livewire\LMS\Dashboard\Student as StudentDashboard;
+use App\Livewire\LMS\Dashboard\Teacher as TeacherDashboard;
+use App\Livewire\LMS\Emails\Index as EmailsIndex;
 use App\Livewire\LMS\Examinations\Index as ExaminationsIndex;
+use App\Livewire\LMS\Examinations\Parent\Index as ParentExaminationsIndex;
 use App\Livewire\LMS\Examinations\Questions\AdminIndex as AdminExamQuestionsIndex;
 use App\Livewire\LMS\Examinations\Questions\TeacherIndex as TeacherExamQuestionsIndex;
 use App\Livewire\LMS\Examinations\Scores\AdminIndex as AdminExamScoresIndex;
 use App\Livewire\LMS\Examinations\Scores\TeacherIndex as TeacherExamScoresIndex;
 use App\Livewire\LMS\Examinations\Student\Index as StudentExaminationsIndex;
-use App\Livewire\LMS\Examinations\Parent\Index as ParentExaminationsIndex;
+use App\Livewire\LMS\GradingScales\Index as GradingScalesIndex;
 use App\Livewire\LMS\Lessons\Admin\Index as AdminLessonsIndex;
-use App\Livewire\LMS\Lessons\Teacher\Index as TeacherLessonsIndex;
-use App\Livewire\LMS\Lessons\Student\Index as StudentLessonsIndex;
 use App\Livewire\LMS\Lessons\Parent\Index as ParentLessonsIndex;
+use App\Livewire\LMS\Lessons\Student\Index as StudentLessonsIndex;
+use App\Livewire\LMS\Lessons\Student\Show as StudentLessonShow;
+use App\Livewire\LMS\Lessons\Teacher\Index as TeacherLessonsIndex;
 use App\Livewire\LMS\Notifications\Index as NotificationsIndex;
-use App\Livewire\LMS\Profile\Index as ProfileIndex;
 use App\Livewire\LMS\Parents\Index as ParentsIndex;
 use App\Livewire\LMS\Permissions\Index as PermissionsIndex;
-use App\Livewire\LMS\Quizzes\Admin\Index as AdminQuizzesIndex;
-use App\Livewire\LMS\Quizzes\Teacher\Index as TeacherQuizzesIndex;
-use App\Livewire\LMS\Quizzes\Teacher\Grade as TeacherQuizGrade;
-use App\Livewire\LMS\Quizzes\Student\Index as StudentQuizzesIndex;
-use App\Livewire\LMS\Quizzes\Student\Attempt as StudentQuizAttempt;
-use App\Livewire\LMS\Quizzes\Parent\Index as ParentQuizzesIndex;
+use App\Livewire\LMS\Profile\Index as ProfileIndex;
+use App\Livewire\LMS\Questions\Index as QuestionsIndex;
 use App\Livewire\LMS\QuizQuestions\Admin\Index as AdminQuizQuestionsIndex;
 use App\Livewire\LMS\QuizQuestions\Teacher\Index as TeacherQuizQuestionsIndex;
-use App\Livewire\LMS\Questions\Index as QuestionsIndex;
-use App\Livewire\LMS\GradingScales\Index as GradingScalesIndex;
+use App\Livewire\LMS\Quizzes\Admin\Index as AdminQuizzesIndex;
+use App\Livewire\LMS\Quizzes\Parent\Index as ParentQuizzesIndex;
+use App\Livewire\LMS\Quizzes\Student\Attempt as StudentQuizAttempt;
+use App\Livewire\LMS\Quizzes\Student\Index as StudentQuizzesIndex;
+use App\Livewire\LMS\Quizzes\Teacher\Grade as TeacherQuizGrade;
+use App\Livewire\LMS\Quizzes\Teacher\Index as TeacherQuizzesIndex;
 use App\Livewire\LMS\Reports\Index as ReportsIndex;
+use App\Livewire\LMS\Reports\Parent\Index as ParentReportsIndex;
 use App\Livewire\LMS\Reports\Show as ReportShow;
 use App\Livewire\LMS\Reports\Student\Index as StudentReportsIndex;
-use App\Livewire\LMS\Reports\Parent\Index as ParentReportsIndex;
-use App\Livewire\LMS\Results\Student\Index as StudentResultsIndex;
 use App\Livewire\LMS\Results\Parent\Index as ParentResultsIndex;
+use App\Livewire\LMS\Results\Student\Index as StudentResultsIndex;
 use App\Livewire\LMS\Roles\Index as RolesIndex;
+use App\Livewire\LMS\SchedulePeriods\Index as SchedulePeriodsIndex;
 use App\Livewire\LMS\SchoolSetup;
 use App\Livewire\LMS\Settings\Index as SettingsIndex;
 use App\Livewire\LMS\Streams\Index as StreamsIndex;
 use App\Livewire\LMS\Students\Index as StudentsIndex;
+use App\Livewire\LMS\Students\Promotions\Index as StudentPromotionsIndex;
 use App\Livewire\LMS\Subjects\Index as SubjectsIndex;
 use App\Livewire\LMS\Teachers\Index as TeachersIndex;
 use App\Livewire\LMS\Terms\Index as TermsIndex;
-use App\Livewire\LMS\Timetables\Admin\Index as AdminTimetablesIndex;
-use App\Livewire\LMS\Timetables\Teacher\Index as TeacherTimetablesIndex;
-use App\Livewire\LMS\Timetables\Student\Index as StudentTimetablesIndex;
-use App\Livewire\LMS\Timetables\Parent\Index as ParentTimetablesIndex;
 use App\Livewire\LMS\TimetableEntries\Index as TimetableEntriesIndex;
-use App\Livewire\LMS\SchedulePeriods\Index as SchedulePeriodsIndex;
+use App\Livewire\LMS\Timetables\Admin\Index as AdminTimetablesIndex;
+use App\Livewire\LMS\Timetables\Parent\Index as ParentTimetablesIndex;
+use App\Livewire\LMS\Timetables\Student\Index as StudentTimetablesIndex;
+use App\Livewire\LMS\Timetables\Teacher\Index as TeacherTimetablesIndex;
 use App\Livewire\LMS\Topics\Admin\Index as AdminTopicsIndex;
 use App\Livewire\LMS\Topics\Teacher\Index as TeacherTopicsIndex;
 use App\Livewire\LMS\Users\Index as UsersIndex;
-use App\Livewire\Website\HomePage;
+use App\Livewire\LMS\Website\Events\Index as WebsiteEventsIndex;
+use App\Livewire\LMS\Website\Gallery\Albums as WebsiteGalleryAlbums;
+use App\Livewire\LMS\Website\Inquiries\Index as WebsiteInquiriesIndex;
+use App\Livewire\LMS\Website\News\Index as WebsiteNewsIndex;
+use App\Livewire\LMS\Website\Pages\Index as WebsitePagesIndex;
+use App\Livewire\LMS\Website\Settings as WebsiteSettings;
+use App\Livewire\LMS\Website\Teachers\Index as WebsiteTeachersIndex;
 use App\Livewire\Website\About as WebsiteAbout;
 use App\Livewire\Website\Academics as WebsiteAcademics;
 use App\Livewire\Website\Admissions as WebsiteAdmissions;
-use App\Livewire\Website\Teachers as WebsiteTeachers;
-use App\Livewire\Website\News as WebsiteNews;
-use App\Livewire\Website\NewsShow as WebsiteNewsShow;
+use App\Livewire\Website\Contact as WebsiteContact;
 use App\Livewire\Website\Events as WebsiteEvents;
 use App\Livewire\Website\EventShow as WebsiteEventShow;
 use App\Livewire\Website\Gallery as WebsiteGallery;
-use App\Livewire\Website\Contact as WebsiteContact;
-use App\Livewire\LMS\Website\Settings as WebsiteSettings;
-use App\Livewire\LMS\Website\News\Index as WebsiteNewsIndex;
-use App\Livewire\LMS\Website\Events\Index as WebsiteEventsIndex;
-use App\Livewire\LMS\Website\Pages\Index as WebsitePagesIndex;
-use App\Livewire\LMS\Website\Inquiries\Index as WebsiteInquiriesIndex;
-use App\Livewire\LMS\Website\Teachers\Index as WebsiteTeachersIndex;
-use App\Livewire\LMS\Website\Gallery\Albums as WebsiteGalleryAlbums;
+use App\Livewire\Website\HomePage;
+use App\Livewire\Website\News as WebsiteNews;
+use App\Livewire\Website\NewsShow as WebsiteNewsShow;
+use App\Livewire\Website\Teachers as WebsiteTeachers;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SitemapController;
 
 Route::get('/', HomePage::class)->name('home');
 Route::get('/about', WebsiteAbout::class)->name('website.about');
@@ -151,6 +154,7 @@ Route::middleware(['auth'])->group(function () {
                 : (in_array('parent', $roles, true)
                     ? 'lms.dashboard.parent'
                     : 'lms.dashboard.admin'));
+
         return redirect()->route($route);
     })->name('lms.dashboard');
 
@@ -158,19 +162,19 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/lms/academic-years', AcademicYearsIndex::class)
         ->middleware('can:viewAny,App\\Models\\AcademicYear')
         ->name('lms.academic-years.index');
-    
+
     Route::get('/lms/terms', TermsIndex::class)
         ->middleware('can:viewAny,App\\Models\\Term')
         ->name('lms.terms.index');
-    
+
     Route::get('/lms/classes', ClassesIndex::class)
         ->middleware('can:viewAny,App\\Models\\SchoolClass')
         ->name('lms.classes.index');
-    
+
     Route::get('/lms/streams', StreamsIndex::class)
         ->middleware('can:viewAny,App\\Models\\Stream')
         ->name('lms.streams.index');
-    
+
     Route::get('/lms/subjects', SubjectsIndex::class)
         ->middleware('can:viewAny,App\\Models\\Subject')
         ->name('lms.subjects.index');
@@ -183,11 +187,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/lms/students', StudentsIndex::class)
         ->middleware('can:viewAny,App\\Models\\Student')
         ->name('lms.students.index');
-    
+
+    Route::get('/lms/students/promotions', StudentPromotionsIndex::class)
+        ->middleware('can:create,App\\Models\\Student')
+        ->name('lms.students.promotions.index');
+
     Route::get('/lms/teachers', TeachersIndex::class)
         ->middleware('can:viewAny,App\\Models\\Teacher')
         ->name('lms.teachers.index');
-    
+
     Route::get('/lms/parents', ParentsIndex::class)
         ->middleware('can:viewAny,App\\Models\\ParentGuardian')
         ->name('lms.parents.index');
@@ -200,8 +208,11 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('can:viewAny,App\\Models\\Lesson')
         ->name('lms.lessons.teacher.index');
     Route::get('/lms/student/lessons', StudentLessonsIndex::class)->name('lms.lessons.student.index');
+    Route::get('/lms/student/lessons/{lesson}', StudentLessonShow::class)
+        ->whereNumber('lesson')
+        ->name('lms.lessons.student.show');
     Route::get('/lms/parent/lessons', ParentLessonsIndex::class)->name('lms.lessons.parent.index');
-    
+
     Route::get('/lms/admin/topics', AdminTopicsIndex::class)
         ->middleware('can:viewAny,App\\Models\\Topic')
         ->name('lms.topics.admin.index');
@@ -222,7 +233,7 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('can:view,assignment')->name('lms.assignments.submissions');
     Route::get('/lms/student/assignments', StudentAssignmentsIndex::class)->name('lms.assignments.student.index');
     Route::get('/lms/parent/assignments', ParentAssignmentsIndex::class)->name('lms.assignments.parent.index');
-    
+
     Route::get('/lms/admin/quizzes', AdminQuizzesIndex::class)
         ->middleware('can:viewAny,App\\Models\\Quiz')
         ->name('lms.quizzes.admin.index');
@@ -240,7 +251,7 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('can:update,quiz')
         ->name('lms.quizzes.teacher.questions.index');
     Route::get('/lms/questions', QuestionsIndex::class)->middleware('can:viewAny,App\\Models\\Question')->name('lms.questions.index');
-    
+
     Route::get('/lms/admin/examinations', ExaminationsIndex::class)
         ->middleware('can:viewAny,App\\Models\\Examination')
         ->name('lms.examinations.admin.index');
@@ -267,7 +278,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/lms/teacher/examinations/{examination}/scores', TeacherExamScoresIndex::class)
         ->middleware('can:update,examination')
         ->name('lms.examinations.teacher.scores.index');
-    
+
     Route::get('/lms/admin/assessments', AdminAssessmentsIndex::class)
         ->middleware('can:viewAny,App\\Models\\Assessment')
         ->name('lms.assessments.admin.index');
@@ -288,7 +299,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('lms.attendance.teacher.record');
     Route::get('/lms/student/attendance', StudentAttendanceShow::class)->name('lms.attendance.student.show');
     Route::get('/lms/parent/attendance', ParentAttendanceShow::class)->name('lms.attendance.parent.show');
-    
+
     Route::get('/lms/admin/timetables', AdminTimetablesIndex::class)
         ->middleware('can:viewAny,App\\Models\\Timetable')
         ->name('lms.timetables.admin.index');
@@ -299,7 +310,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/lms/parent/timetables', ParentTimetablesIndex::class)->name('lms.timetables.parent.index');
     Route::get('/lms/timetables/{timetable}/entries', TimetableEntriesIndex::class)->middleware('can:update,timetable')->name('lms.timetables.entries.index');
     Route::get('/lms/schedule-periods', SchedulePeriodsIndex::class)->middleware('can:viewAny,App\\Models\\SchedulePeriod')->name('lms.schedule-periods.index');
-    
+
     Route::get('/lms/reports', ReportsIndex::class)
         ->middleware('can:viewAny,App\\Models\\ReportCard')
         ->name('lms.reports.index');
@@ -319,7 +330,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/lms/announcements', AnnouncementsFeed::class)
         ->middleware('can:viewAny,App\\Models\\Announcement')
         ->name('lms.announcements.feed');
-    
+
+    Route::get('/lms/emails', EmailsIndex::class)
+        ->middleware('can:viewAny,App\\Models\\EmailCampaign')
+        ->name('lms.emails.index');
+
     Route::get('/lms/notifications', NotificationsIndex::class)
         ->name('lms.notifications.index');
 
@@ -327,11 +342,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/lms/users', UsersIndex::class)
         ->middleware('can:viewAny,App\\Models\\User')
         ->name('lms.users.index');
-    
+
     Route::get('/lms/roles', RolesIndex::class)
         ->middleware('can:viewAny,App\\Models\\User')
         ->name('lms.roles.index');
-    
+
     Route::get('/lms/permissions', PermissionsIndex::class)
         ->middleware('can:viewAny,App\\Models\\User')
         ->name('lms.permissions.index');
@@ -339,11 +354,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/lms/audit-logs', AuditLogsIndex::class)
         ->middleware('can:viewAny,App\\Models\\User')
         ->name('lms.audit-logs.index');
-    
+
     Route::get('/lms/school-setup', SchoolSetup::class)
         ->middleware('can:viewAny,App\\Models\\AcademicYear')
         ->name('lms.school-setup');
-    
+
     Route::get('/lms/settings', SettingsIndex::class)
         ->name('lms.settings.index');
 });

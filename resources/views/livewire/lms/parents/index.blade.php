@@ -69,6 +69,9 @@
                             <td class="px-5 py-4 text-slate-600">{{ $parent->students_count }}</td>
                             <td class="whitespace-nowrap px-5 py-4 text-right">
                                 <div class="flex justify-end gap-2">
+                                    @can('viewAny', App\Models\EmailCampaign::class)
+                                        <x-ui.icon-link :href="route('lms.emails.index', ['recipient_type' => 'parent', 'recipient_id' => $parent->id])" icon="mail" label="Email {{ $parent->first_name }} {{ $parent->last_name }}" />
+                                    @endcan
                                     @can('update', $parent)
                                         <x-ui.icon-button wire:click="edit({{ $parent->id }})" icon="edit" label="Edit {{ $parent->first_name }} {{ $parent->last_name }}" target="edit({{ $parent->id }})" />
                                     @endcan
@@ -93,7 +96,7 @@
 
     <x-pagination :paginator="$parents" />
 
-    <x-modal :show="$showFormModal" :title="$editingId ? 'Edit parent or guardian' : 'Add parent or guardian'" close-action="closeModals" max-width="xl">
+    <x-modal :show="$showFormModal" :title="$editingId ? 'Edit parent or guardian' : 'Add parent or guardian'" close-action="closeModals" max-width="2xl">
         <form wire:submit="save" class="space-y-5">
             <div class="grid gap-5 sm:grid-cols-2">
                 <div>
@@ -121,6 +124,18 @@
                 </div>
             </div>
 
+            <div class="rounded-xl border border-blue-100 bg-blue-50/70 p-4">
+                <p class="text-sm font-semibold text-blue-950">Portal login</p>
+                <p class="mt-1 text-xs leading-5 text-blue-800">
+                    The email address is the username.
+                    @if ($editingId)
+                        An existing login keeps its current password. If this profile has no login yet, the phone number (digits only) becomes its initial password.
+                    @else
+                        The phone number (digits only) becomes the initial password and should be changed after the first login.
+                    @endif
+                </p>
+            </div>
+
             <div>
                 <label for="relationship" class="block text-sm font-medium">Relationship to child</label>
                 <input wire:model.blur="relationship" id="relationship" placeholder="Mother, Father, Guardian" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
@@ -131,6 +146,32 @@
                 <label for="address" class="block text-sm font-medium">Address</label>
                 <textarea wire:model.blur="address" id="address" rows="3" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm"></textarea>
                 @error('address')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
+            </div>
+
+            <div class="grid gap-5 sm:grid-cols-2">
+                <div>
+                    <label for="gps-address" class="block text-sm font-medium">GPS address</label>
+                    <input wire:model.blur="gpsAddress" id="gps-address" placeholder="Example: GA-123-4567" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
+                    @error('gpsAddress')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label for="parent-city" class="block text-sm font-medium">Town / City</label>
+                    <input wire:model.blur="city" id="parent-city" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
+                    @error('city')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
+                </div>
+            </div>
+
+            <div class="grid gap-5 sm:grid-cols-2">
+                <div>
+                    <label for="workplace" class="block text-sm font-medium">Workplace / Company</label>
+                    <input wire:model.blur="workplace" id="workplace" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
+                    @error('workplace')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label for="ghana-card-number" class="block text-sm font-medium">Ghana Card number</label>
+                    <input wire:model.blur="ghanaCardNumber" id="ghana-card-number" placeholder="GHA-000000000-0" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
+                    @error('ghanaCardNumber')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
+                </div>
             </div>
 
             <fieldset>

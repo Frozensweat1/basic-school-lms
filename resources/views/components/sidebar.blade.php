@@ -176,10 +176,18 @@
         <div>
             <p class="nav-section-label mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-slate-500">People</p>
             <div class="space-y-1">
-                <a href="{{ route('lms.students.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.students.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                <a href="{{ route('lms.students.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.students.index')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">👨‍🎓</span>
                     <span class="nav-link-text">Students</span>
                 </a>
+                @can('create', App\Models\Student::class)
+                    <a href="{{ route('lms.students.promotions.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.students.promotions.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M5 19h14M7 16l5-5 5 5M12 11V4" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                        <span class="nav-link-text">Student Promotions</span>
+                    </a>
+                @endcan
                 <a href="{{ route('lms.teachers.index') ?? '#' }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.teachers.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                     <span aria-hidden="true">👨‍🏫</span>
                     <span class="nav-link-text">Teachers</span>
@@ -313,6 +321,15 @@
                     <a href="{{ $announcementsRoute }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.announcements.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
                         <span aria-hidden="true">📢</span>
                         <span class="nav-link-text">Announcements</span>
+                    </a>
+                @endif
+                @if ($sidebarIsAdministrator)
+                    <a href="{{ route('lms.emails.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.emails.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M3 6h18v12H3z" stroke-linejoin="round"></path>
+                            <path d="m3 7 9 6 9-6" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                        <span class="nav-link-text">Email Centre</span>
                     </a>
                 @endif
                 <a href="{{ route('lms.notifications.index') }}" class="nav-link flex items-center gap-3 rounded-lg px-3 py-2 @if(request()->routeIs('lms.notifications.*')) bg-slate-800 font-medium text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">

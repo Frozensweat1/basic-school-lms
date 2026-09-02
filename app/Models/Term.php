@@ -32,9 +32,21 @@ class Term extends Model
 
     public function classes(): HasMany
     {
-        return $this->hasMany(SchoolClass::class);
+        return $this->hasMany(SchoolClass::class, 'academic_year_id', 'academic_year_id');
     }
 
-    public function assessments(): HasMany { return $this->hasMany(Assessment::class); }
-    public function attendanceRecords(): HasMany { return $this->hasMany(AttendanceRecord::class); }
+    public function assessmentComponents(): HasMany
+    {
+        return $this->hasMany(AssessmentComponent::class);
+    }
+
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(Assessment::class);
+    }
+
+    public function attendanceRecords(): HasMany
+    {
+        return $this->hasMany(AttendanceRecord::class);
+    }
 }

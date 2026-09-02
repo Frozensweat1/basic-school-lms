@@ -41,6 +41,7 @@ class RoleSeeder extends Seeder
             'manage attendance',
             'manage timetables',
             'manage announcements',
+            'manage email communications',
             'view reports',
             'publish reports',
             'manage website content',

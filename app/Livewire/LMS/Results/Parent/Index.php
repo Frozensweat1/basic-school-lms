@@ -14,24 +14,25 @@ class Index extends Component
     use WithPagination;
 
     public ParentGuardian $parent;
+
     public string $studentId = '';
 
     public function mount(): void
     {
         $this->parent = auth()->user()->parentGuardian;
         abort_unless(auth()->user()->hasRole('parent') && $this->parent, 403);
-        $this->studentId = (string) ($this->activeStudents()->value('students.id') ?? '');
+        $this->studentId = (string) ($this->wards()->value('students.id') ?? '');
     }
 
     public function updatedStudentId(): void
     {
         $this->resetPage();
-        abort_unless($this->studentId === '' || $this->activeStudents()->whereKey((int) $this->studentId)->exists(), 403);
+        abort_unless($this->studentId === '' || $this->wards()->whereKey((int) $this->studentId)->exists(), 403);
     }
 
     public function render()
     {
-        $students = $this->activeStudents()->orderBy('last_name')->get();
+        $students = $this->wards()->orderBy('last_name')->get();
         $studentId = (int) $this->studentId;
         $results = SubjectResult::query()
             ->with(['classSubject.subject', 'term', 'gradingScale'])
@@ -44,8 +45,8 @@ class Index extends Component
         return view('livewire.lms.results.parent.index', compact('students', 'results'));
     }
 
-    private function activeStudents()
+    private function wards()
     {
-        return $this->parent->students()->where('students.status', 'active');
+        return $this->parent->students()->where('students.school_id', $this->parent->school_id);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\School;
 use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -26,14 +27,22 @@ class TeacherCrudTest extends TestCase
             ->set('firstName', 'Ama')
             ->set('lastName', 'Mensah')
             ->set('email', 'ama@example.test')
+            ->set('password', 'TeacherPass123!')
             ->call('save')
             ->assertHasNoErrors();
+
+        $teacher = Teacher::where('employee_id', 'T-001')->firstOrFail();
 
         $this->assertDatabaseHas('teachers', [
             'school_id' => $school->id,
             'employee_id' => 'T-001',
             'first_name' => 'Ama',
+            'user_id' => $teacher->user_id,
         ]);
+        $this->assertSame('ama@example.test', $teacher->user->email);
+        $this->assertSame('Ama Mensah', $teacher->user->name);
+        $this->assertTrue($teacher->user->hasRole('teacher'));
+        $this->assertTrue(Hash::check('TeacherPass123!', $teacher->user->password));
     }
 
     public function test_school_admin_can_search_and_filter_teachers(): void
@@ -75,6 +84,7 @@ class TeacherCrudTest extends TestCase
     private function schoolAdmin(): array
     {
         Role::create(['name' => 'school_admin']);
+        Role::create(['name' => 'teacher']);
         $user = User::factory()->create();
         $user->assignRole('school_admin');
         $school = School::create(['name' => 'BrightStar Academy', 'code' => 'BSA']);

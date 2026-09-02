@@ -25,10 +25,10 @@ class ReportCardGenerator
 
         $isEnrolled = $schoolClass->enrollments()
             ->where('student_id', $student->id)
-            ->where('status', 'active')
+            ->enrolledDuring($term->starts_at, $term->ends_at)
             ->exists();
         if (! $isEnrolled) {
-            throw ValidationException::withMessages(['generationStudentId' => 'The student is not actively enrolled in the selected class.']);
+            throw ValidationException::withMessages(['generationStudentId' => 'The student was not enrolled in the selected class during this term.']);
         }
 
         $records = AttendanceRecord::where('student_id', $student->id)

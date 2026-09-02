@@ -15,6 +15,7 @@ use Illuminate\Validation\ValidationException;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use Throwable;
 
@@ -33,13 +34,18 @@ class Index extends Component
     }
 
     public string $name = '';
+
     public string $email = '';
+
     public string $currentPassword = '';
+
     public string $password = '';
+
     public string $passwordConfirmation = '';
+
     public string $sessionPassword = '';
 
-    /** @var \Livewire\Features\SupportFileUploads\TemporaryUploadedFile|UploadedFile|null */
+    /** @var TemporaryUploadedFile|UploadedFile|null */
     public $photo = null;
 
     public function mount(): void
@@ -67,10 +73,17 @@ class Index extends Component
                 $newPhotoPath = $this->photo->store('profile-photos', 'public');
             }
 
-            $user->name = $data['name'];
-            $user->email = $data['email'];
-            $user->profile_photo_path = $newPhotoPath;
-            $user->save();
+            DB::transaction(function () use ($user, $data, $newPhotoPath): void {
+                $user->name = $data['name'];
+                $user->email = strtolower(trim($data['email']));
+                $user->profile_photo_path = $newPhotoPath;
+                $user->save();
+
+                // Teacher and parent tables retain email for operational lists;
+                // keep that denormalized value aligned with the login identity.
+                $user->teacher?->update(['email' => $user->email]);
+                $user->parentGuardian?->update(['email' => $user->email]);
+            });
 
             if ($this->photo && $oldPhotoPath && $oldPhotoPath !== $newPhotoPath) {
                 Storage::disk('public')->delete($oldPhotoPath);

@@ -19,7 +19,19 @@ class Teacher extends Model
         'middle_name',
         'last_name',
         'photo_path',
+        'gender',
+        'date_of_birth',
+        'nationality',
         'phone',
+        'postal_address',
+        'residential_address',
+        'gps_address',
+        'marital_status',
+        'religion',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+        'ssnit_number',
+        'ghana_card_number',
         'email',
         'employment_date',
         'status',
@@ -30,12 +42,33 @@ class Teacher extends Model
 
     protected $casts = [
         'employment_date' => 'date',
+        'date_of_birth' => 'date',
         'is_featured_on_website' => 'boolean',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function dependants(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(TeacherDependant::class);
+    }
+
+    public function qualifications(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(TeacherQualification::class);
+    }
+
+    public function workExperiences(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(TeacherWorkExperience::class);
+    }
+
+    public function referees(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(TeacherReferee::class);
     }
 
     public function classes(): BelongsToMany

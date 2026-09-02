@@ -12,6 +12,8 @@ use Spatie\Permission\PermissionRegistrar;
 class DatabaseMaintenance
 {
     private const DATA_TABLES = [
+        'email_recipients',
+        'email_campaigns',
         'announcement_attachments',
         'notifications',
         'audit_logs',

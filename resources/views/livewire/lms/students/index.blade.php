@@ -8,8 +8,16 @@
 
         @can('create', App\Models\Student::class)
             <div class="flex flex-wrap gap-3">
+                <a href="{{ route('lms.students.promotions.index') }}" wire:navigate class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M5 19h14M7 16l5-5 5 5M12 11V4" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                    Promotions
+                </a>
+                <x-button wire:click="exportStudents('csv')" variant="ghost" target="exportStudents('csv')" :loading="true">Export CSV</x-button>
+                <x-button wire:click="exportStudents('xlsx')" variant="ghost" target="exportStudents('xlsx')" :loading="true">Export Excel</x-button>
                 <x-button wire:click="openImport" variant="secondary" target="openImport" :loading="true">Import students</x-button>
-                <x-button wire:click="create" target="create" :loading="true" icon="plus">Add student</x-button>
+                <x-button wire:click="create" target="create" :loading="true" icon="plus">Admit student</x-button>
             </div>
         @endcan
     </div>
@@ -59,13 +67,13 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-3 py-3 font-mono">student_id, admission_number, first_name, last_name, date_of_birth, gender, admission_date</td>
-                                <td class="px-3 py-3 font-mono">middle_name, status, class_name</td>
+                                <td class="px-3 py-3 font-mono">student_id, admission_number, first_name, last_name, email, temporary_password, date_of_birth, gender, home_town, region, nationality, admission_date, class_name, enrollment_type, guardian_first_name, guardian_last_name, guardian_email, guardian_phone, guardian_information_date, guardian_gps_address, guardian_city, has_allergies</td>
+                                <td class="px-3 py-3 font-mono">middle_name, status, denomination, health_insurance_id, previous_school_name, previous_school_city, previous_school_country, previous_school_gps_address, previous_school_phone, previous_school_last_class, guardian_relationship, guardian_workplace, guardian_ghana_card_number, allergy_details</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <p class="text-xs text-slate-500">Use dates in YYYY-MM-DD format. Gender is male, female, or other. Status defaults to active. An optional <span class="font-mono">class_name</span> must exactly match one active class.</p>
+                <p class="text-xs text-slate-500">Use dates in YYYY-MM-DD format. Student passwords must contain at least 10 characters. Gender is male, female, or other; enrollment type is day or boarding; and <span class="font-mono">class_name</span> must exactly match one active class. A guardian is reused when the email or phone matches; a new guardian signs in with their email and uses their normalized phone number as the initial password.</p>
 
                 @if ($importErrors)
                     <section class="rounded-xl border border-amber-200 bg-amber-50 p-4" aria-labelledby="import-errors-title">
@@ -91,8 +99,8 @@
         $filtersActive = filled($search) || filled($filterStatus) || filled($filterGender) || filled($filterClassId) || $sortBy !== 'latest' || (int) $perPage !== 15;
     @endphp
     <div class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
-        <div class="grid w-full gap-3 sm:grid-cols-2 xl:max-w-6xl xl:grid-cols-[minmax(16rem,1fr)_10rem_10rem_13rem_11rem_8rem]">
-            <div class="relative sm:col-span-2 xl:col-span-1">
+        <div class="grid w-full gap-3 xl:max-w-6xl xl:grid-cols-[minmax(16rem,1fr)_10rem_10rem_13rem_11rem_8rem] xl:items-center">
+            <div class="relative">
                 <label for="student-search" class="sr-only">Search students</label>
                 <svg class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <circle cx="11" cy="11" r="7"></circle>
@@ -195,6 +203,9 @@
                             </td>
                             <td class="whitespace-nowrap px-5 py-4 text-right">
                                 <div class="flex justify-end gap-2">
+                                    @can('viewAny', App\Models\EmailCampaign::class)
+                                        <x-ui.icon-link :href="route('lms.emails.index', ['recipient_type' => 'student', 'recipient_id' => $student->id])" icon="mail" label="Email {{ $student->first_name }} {{ $student->last_name }}" />
+                                    @endcan
                                     @can('update', $student)
                                         <x-ui.icon-button wire:click="edit({{ $student->id }})" icon="edit" label="Edit {{ $student->first_name }} {{ $student->last_name }}" target="edit({{ $student->id }})" />
                                     @endcan
@@ -219,7 +230,7 @@
 
     <x-pagination :paginator="$students" />
 
-    <x-modal :show="$showFormModal" :title="$editingId ? 'Edit student' : 'Add student'" close-action="closeModals" max-width="xl">
+    <x-modal :show="$showFormModal" :title="$editingId ? 'Edit admission record' : 'New student admission'" close-action="closeModals" max-width="3xl">
         <form wire:submit="save" class="space-y-5">
             <div class="grid gap-5 sm:grid-cols-2">
                 <div>
@@ -251,52 +262,26 @@
                 </div>
             </div>
 
-            <div class="grid gap-5 sm:grid-cols-2">
-                <div>
-                    <label for="dob" class="block text-sm font-medium">Date of birth</label>
-                    <input wire:model.blur="dateOfBirth" id="dob" type="date" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
-                    @error('dateOfBirth')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
-                </div>
-                <div>
-                    <label for="gender" class="block text-sm font-medium">Gender</label>
-                    <select wire:model.blur="gender" id="gender" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
-                        <option value="">Select gender</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Other</option>
-                    </select>
-                    @error('gender')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
-                </div>
-            </div>
-
-            <div class="grid gap-5 sm:grid-cols-2">
-                <div>
-                    <label for="class" class="block text-sm font-medium">Active class</label>
-                    <select wire:model.blur="schoolClassId" id="class" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
-                        <option value="">No class assigned</option>
-                        @foreach ($classes as $class)
-                            <option value="{{ $class->id }}">{{ $class->name }}{{ $class->stream ? ' — ' . $class->stream->name : '' }}</option>
-                        @endforeach
-                    </select>
-                    @error('schoolClassId')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
-                </div>
-                <div>
-                    <label for="admission-date" class="block text-sm font-medium">Admission date</label>
-                    <input wire:model.blur="admissionDate" id="admission-date" type="date" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
-                    @error('admissionDate')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
+            <div class="rounded-xl border border-blue-100 bg-blue-50/70 p-4">
+                <p class="text-sm font-semibold text-blue-950">Student portal login</p>
+                <p class="mt-1 text-xs text-blue-800">{{ $editingId ? 'Update the email if needed and leave the password blank to keep the current password.' : 'Create the credentials the student will use to access lessons and assignments.' }}</p>
+                <div class="mt-3 grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="student-email" class="block text-sm font-medium text-slate-800">Login email</label>
+                        <input wire:model.blur="email" id="student-email" type="email" autocomplete="email"
+                            class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
+                        @error('email')<p class="mt-1 text-sm text-rose-700">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label for="student-password" class="block text-sm font-medium text-slate-800">{{ $editingId ? 'New password (optional)' : 'Initial password' }}</label>
+                        <input wire:model.blur="password" id="student-password" type="password" autocomplete="new-password"
+                            class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
+                        @error('password')<p class="mt-1 text-sm text-rose-700">{{ $message }}</p>@enderror
+                    </div>
                 </div>
             </div>
 
-            <div>
-                <label for="student-status" class="block text-sm font-medium">Status</label>
-                <select wire:model.blur="status" id="student-status" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm">
-                    <option value="active">Active</option>
-                    <option value="graduated">Graduated</option>
-                    <option value="transferred">Transferred</option>
-                    <option value="withdrawn">Withdrawn</option>
-                    <option value="suspended">Suspended</option>
-                </select>
-            </div>
+            <x-lms.student-admission-fields :classes="$classes" :has-allergies="$hasAllergies" prefix="student-form" />
 
             <div class="flex justify-end gap-3">
                 <x-button wire:click="closeModals" type="button" variant="ghost" target="closeModals" :loading="true">Cancel</x-button>
