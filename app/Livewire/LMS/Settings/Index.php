@@ -3,6 +3,7 @@
 namespace App\Livewire\LMS\Settings;
 
 use App\Models\School;
+use App\Jobs\QueueWorkerHealthCheckJob;
 use App\Models\SchoolSetting;
 use App\Support\DatabaseMaintenance;
 use Illuminate\Support\Facades\DB;
@@ -69,6 +70,12 @@ class Index extends Component
     public string $socialWhatsapp = '';
 
     public bool $isInitialSetup = false;
+
+    public string $queueHealthToken = '';
+
+    public string $queueHealthStatus = '';
+
+    public int $queueHealthStartedAt = 0;
 
     public function mount(): void
     {
@@ -194,6 +201,50 @@ class Index extends Component
         $this->logo = null;
         $this->logoPath = '';
         $this->removeLogo = true;
+    }
+
+    public function testQueueWorker(): void
+    {
+        abort_unless(auth()->user()->hasAnyRole(['super_admin', 'school_admin']), 403);
+
+        $this->queueHealthToken = (string) str()->uuid();
+        $this->queueHealthStatus = 'pending';
+        $this->queueHealthStartedAt = now()->timestamp;
+
+        cache()->put('queue-health-check:'.$this->queueHealthToken, [
+            'status' => 'queued',
+        ], now()->addMinutes(10));
+
+        try {
+            QueueWorkerHealthCheckJob::dispatch($this->queueHealthToken)
+                ->onQueue(config('sms.queue', 'sms'));
+        } catch (Throwable $exception) {
+            $this->queueHealthStatus = 'failed';
+            LivewireAlert::title('Unable to test the queue worker')->error()->asToast()->position('top-end')->show();
+            report($exception);
+        }
+    }
+
+    public function checkQueueWorker(): void
+    {
+        if ($this->queueHealthToken === '' || $this->queueHealthStatus !== 'pending') {
+            return;
+        }
+
+        $result = cache()->get('queue-health-check:'.$this->queueHealthToken, []);
+        $status = (string) ($result['status'] ?? 'pending');
+
+        if ($status === 'completed') {
+            $this->queueHealthStatus = 'completed';
+            LivewireAlert::title('Queue worker is running')->success()->asToast()->position('top-end')->show();
+
+            return;
+        }
+
+        if ($status === 'failed' || now()->timestamp - $this->queueHealthStartedAt >= 15) {
+            $this->queueHealthStatus = 'failed';
+            LivewireAlert::title('Queue worker is not running')->error()->asToast()->position('top-end')->show();
+        }
     }
 
     public function backupDatabase()

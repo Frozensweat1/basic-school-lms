@@ -146,13 +146,23 @@
         <p class="mt-1 text-sm text-amber-900">Download a JSON backup of the LMS data, or reset demo data while
             preserving super administrator accounts.</p>
     </div>
-    <div class="mt-4 flex flex-wrap gap-3 lg:mt-0"><x-button type="button" variant="secondary" icon="save"
+    <div class="mt-4 flex flex-wrap items-center gap-3 lg:mt-0">
+        <x-button type="button" variant="secondary" icon="play"
+            target="testQueueWorker" :loading="true" wire:click="testQueueWorker">Test queue worker</x-button>
+        <x-button type="button" variant="secondary" icon="save"
             target="backupDatabase" :loading="true" wire:click="backupDatabase">Download backup</x-button>
         @if (auth()->user()->hasRole('super_admin'))
             <x-button type="button" variant="danger" icon="trash" target="resetDatabase" :loading="true"
                 wire:click="resetDatabase"
                 onclick="return confirm('This permanently removes all school data and non-super-admin users. Continue?')">Reset
                 database</x-button>
+        @endif
+        @if ($queueHealthStatus === 'pending')
+            <span wire:poll.2s="checkQueueWorker" class="text-xs font-medium text-amber-800" role="status">Waiting for queue worker...</span>
+        @elseif ($queueHealthStatus === 'completed')
+            <span class="text-xs font-medium text-emerald-800" role="status">Queue worker is running.</span>
+        @elseif ($queueHealthStatus === 'failed')
+            <span class="text-xs font-medium text-rose-800" role="status">Queue test failed. Check the worker logs.</span>
         @endif
     </div>
 </section>

@@ -185,7 +185,7 @@ npm.cmd run build
 
 ### 7. Start the application
 
-The provided Composer development command starts the Laravel server, queue listener, log viewer, and Vite development server together:
+The provided Composer development command starts the Laravel server, three concurrent queue workers (`sms`, `emails`, and `default`), the log viewer, and Vite together:
 
 ```bash
 composer run dev
@@ -207,10 +207,18 @@ npm run dev
 ```
 
 ```bash
-php artisan queue:work --queue=sms,emails,default --tries=3 --timeout=60
+php artisan queue:work --queue=sms --tries=3 --timeout=60
 ```
 
-The queue worker is important for SMS and email campaigns, announcements, and notification delivery. SMS campaigns create one queued job per deliverable phone number.
+```bash
+php artisan queue:work --queue=emails --tries=3 --timeout=60
+```
+
+```bash
+php artisan queue:work --queue=default --tries=3 --timeout=60
+```
+
+Run all three workers when testing concurrent SMS, email, announcements, and notification delivery. SMS campaigns create one queued job per deliverable phone number.
 
 ## Demo accounts
 
@@ -259,10 +267,18 @@ The default configuration uses the database queue:
 QUEUE_CONNECTION=database
 ```
 
-Keep a worker running during development and configure Supervisor, systemd, Docker, or an equivalent process manager in production. Process queues in priority order so SMS jobs are handled before email and default jobs:
+Run one worker per queue during development and configure one managed worker per queue in production. This allows SMS, email, and default jobs to be processed concurrently:
 
 ```bash
-php artisan queue:work --queue=sms,emails,default --sleep=3 --tries=3 --timeout=60
+php artisan queue:work --queue=sms --sleep=3 --tries=3 --timeout=60
+```
+
+```bash
+php artisan queue:work --queue=emails --sleep=3 --tries=3 --timeout=60
+```
+
+```bash
+php artisan queue:work --queue=default --sleep=3 --tries=3 --timeout=60
 ```
 
 The database queue requires the jobs tables. They are included in this project's migrations. For a fresh Laravel installation without them, create and migrate them with:
@@ -346,18 +362,24 @@ php artisan queue:restart
 Run long-lived workers under Supervisor, systemd, Docker, or an equivalent process manager. A Supervisor configuration can look like this:
 
 ```ini
-[program:basic-school-lms-worker]
+[program:basic-school-lms-sms-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php /var/www/basic-school-lms/artisan queue:work --queue=sms,emails,default --sleep=3 --tries=3 --timeout=60 --max-time=3600
+command=php /var/www/basic-school-lms/artisan queue:work --queue=sms --sleep=3 --tries=3 --timeout=60 --max-time=3600
 directory=/var/www/basic-school-lms
 autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true
-numprocs=2
+numprocs=1
 redirect_stderr=true
-stdout_logfile=/var/log/supervisor/basic-school-lms-worker.log
+stdout_logfile=/var/log/supervisor/basic-school-lms-sms-worker.log
 stopwaitsecs=3600
+```
+
+Create equivalent Supervisor programs named `basic-school-lms-emails-worker` and `basic-school-lms-default-worker`, changing only `--queue=sms` and the log filename to `emails` and `default`. Run all three programs together:
+
+```bash
+sudo supervisorctl restart basic-school-lms-sms-worker:* basic-school-lms-emails-worker:* basic-school-lms-default-worker:*
 ```
 
 Reload the Supervisor configuration after adding or changing it:
