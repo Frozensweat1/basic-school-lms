@@ -29,6 +29,10 @@ use App\Models\School;
 use App\Models\SchoolSetting;
 use App\Models\Term;
 use App\Models\Examination;
+use App\Models\SmsCampaign;
+use App\Contracts\SmsGateway;
+use App\Services\Sms\HttpSmsGateway;
+use App\Services\Sms\LogSmsGateway;
 use App\Models\WebsiteEvent;
 use App\Models\WebsiteGalleryAlbum;
 use App\Models\WebsiteGalleryImage;
@@ -74,6 +78,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(SmsGateway::class, function (): SmsGateway {
+            return match (config('sms.default', 'log')) {
+                'http' => $this->app->make(HttpSmsGateway::class),
+                'log' => $this->app->make(LogSmsGateway::class),
+                default => throw new \InvalidArgumentException('Unsupported SMS connection: '.config('sms.default')),
+            };
+        });
+
         // Branding is read by both the Livewire page and its layout. Keeping
         // these services request-scoped avoids repeating the same settings
         // queries during a public page render.
@@ -114,6 +126,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Lesson::class, LessonPolicy::class);
         Gate::policy(Term::class, TermPolicy::class);
         Gate::policy(Examination::class, ExaminationPolicy::class);
+        Gate::policy(SmsCampaign::class, \App\Policies\SmsCampaignPolicy::class);
 
         $this->registerPublicWebsiteCacheInvalidation();
     }

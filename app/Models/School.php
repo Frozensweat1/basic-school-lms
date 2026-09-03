@@ -15,4 +15,5 @@ class School extends Model
     public function parents(): HasMany { return $this->hasMany(ParentGuardian::class); }
     public function subjects(): HasMany { return $this->hasMany(Subject::class); }
     public function emailCampaigns(): HasMany { return $this->hasMany(EmailCampaign::class); }
+    public function smsCampaigns(): HasMany { return $this->hasMany(SmsCampaign::class); }
 }

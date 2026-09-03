@@ -43,6 +43,7 @@ class LmsPage
             Str::startsWith($routeName, 'lms.results') => 'Results',
             Str::startsWith($routeName, 'lms.announcements') => 'Announcements',
             Str::startsWith($routeName, 'lms.emails') => 'Email Centre',
+            Str::startsWith($routeName, 'lms.sms') => 'SMS Centre',
             Str::startsWith($routeName, 'lms.notifications') => 'Notifications',
             Str::startsWith($routeName, 'lms.users') => 'Users',
             Str::startsWith($routeName, 'lms.roles') => 'Roles',

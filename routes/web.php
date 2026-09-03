@@ -63,6 +63,7 @@ use App\Livewire\LMS\Roles\Index as RolesIndex;
 use App\Livewire\LMS\SchedulePeriods\Index as SchedulePeriodsIndex;
 use App\Livewire\LMS\SchoolSetup;
 use App\Livewire\LMS\Settings\Index as SettingsIndex;
+use App\Livewire\LMS\Sms\Index as SmsIndex;
 use App\Livewire\LMS\Streams\Index as StreamsIndex;
 use App\Livewire\LMS\Students\Index as StudentsIndex;
 use App\Livewire\LMS\Students\Promotions\Index as StudentPromotionsIndex;
@@ -334,6 +335,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/lms/emails', EmailsIndex::class)
         ->middleware('can:viewAny,App\\Models\\EmailCampaign')
         ->name('lms.emails.index');
+
+    Route::get('/lms/sms', SmsIndex::class)
+        ->middleware('can:viewAny,App\\Models\\SmsCampaign')
+        ->name('lms.sms.index');
 
     Route::get('/lms/notifications', NotificationsIndex::class)
         ->name('lms.notifications.index');

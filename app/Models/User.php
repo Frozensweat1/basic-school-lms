@@ -65,4 +65,5 @@ class User extends Authenticatable
     public function teacher(): HasOne { return $this->hasOne(Teacher::class); }
     public function parentGuardian(): HasOne { return $this->hasOne(ParentGuardian::class, 'user_id'); }
     public function createdEmailCampaigns(): HasMany { return $this->hasMany(EmailCampaign::class, 'created_by'); }
+    public function createdSmsCampaigns(): HasMany { return $this->hasMany(SmsCampaign::class, 'created_by'); }
 }

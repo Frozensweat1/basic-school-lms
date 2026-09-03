@@ -38,6 +38,8 @@ The application is intended for basic and primary schools that want one system f
 - Attendance entry, summaries, and role-specific attendance views.
 - Schedule periods, timetable management, calendar/grid views, and automatic conflict-aware timetable generation.
 - Announcements, attachments, queued notifications, and an in-app notification centre.
+- Email Centre with school-scoped campaigns, private per-recipient delivery, delivery history, and failed-message retries.
+- SMS Centre with single and bulk campaigns for staff, parents, and students, class filters, phone normalization, duplicate suppression, segment checks, delivery history, and failed-message retries.
 - Role-specific dashboards with attendance and academic-performance charts.
 
 ## User roles
@@ -205,10 +207,10 @@ npm run dev
 ```
 
 ```bash
-php artisan queue:work --queue=emails,default --tries=3 --timeout=60
+php artisan queue:work --queue=sms,emails,default --tries=3 --timeout=60
 ```
 
-The queue worker is important for email campaigns, announcements, and notification delivery.
+The queue worker is important for SMS and email campaigns, announcements, and notification delivery. SMS campaigns create one queued job per deliverable phone number.
 
 ## Demo accounts
 
@@ -257,10 +259,40 @@ The default configuration uses the database queue:
 QUEUE_CONNECTION=database
 ```
 
-Keep a worker running during development and configure Supervisor, systemd, or an equivalent process manager in production:
+Keep a worker running during development and configure Supervisor, systemd, Docker, or an equivalent process manager in production. Process queues in priority order so SMS jobs are handled before email and default jobs:
 
 ```bash
-php artisan queue:work --queue=emails,default --sleep=3 --tries=3 --timeout=60
+php artisan queue:work --queue=sms,emails,default --sleep=3 --tries=3 --timeout=60
+```
+
+The database queue requires the jobs tables. They are included in this project's migrations. For a fresh Laravel installation without them, create and migrate them with:
+
+```bash
+php artisan queue:table
+php artisan queue:failed-table
+php artisan migrate
+```
+
+The SMS queue jobs are `DispatchSmsCampaignJob`, which expands a campaign into recipient jobs, and `SendSmsRecipientJob`, which claims one recipient, calls the configured gateway, records the provider message ID, and retries temporary failures.
+
+### SMS gateway
+
+The SMS module uses a project gateway contract and Laravel's built-in HTTP client; no external SMS provider package is required. The default `log` driver writes accepted messages to `storage/logs/laravel.log` without sending them. For a real provider, set these values in `.env`:
+
+```dotenv
+SMS_CONNECTION=http
+SMS_HTTP_ENDPOINT=https://provider.example/api/send
+SMS_HTTP_TOKEN=replace-with-provider-token
+SMS_SENDER_ID=YourSchool
+SMS_QUEUE=sms
+```
+
+The HTTP adapter sends `to`, `message`, and `sender` by default, authenticates with `Authorization: Bearer <token>`, and reads `message_id` and `status` from the JSON response. Provider-specific request fields and response paths can be changed with the `SMS_HTTP_*` variables documented in `.env.example`. Never commit `SMS_HTTP_TOKEN` or production credentials.
+
+After changing queue or SMS settings, clear cached configuration:
+
+```bash
+php artisan optimize:clear
 ```
 
 ### Email
@@ -286,6 +318,57 @@ After changing `.env`, clear stale configuration:
 ```bash
 php artisan optimize:clear
 ```
+
+## Production queue and job deployment
+
+Use a real queue backend and a process manager in production. The database queue is suitable for a small single-server deployment; Redis is preferable for higher throughput or multiple workers.
+
+Example production values:
+
+```dotenv
+APP_ENV=production
+APP_DEBUG=false
+QUEUE_CONNECTION=database
+SMS_CONNECTION=http
+SMS_QUEUE=sms
+SMS_HTTP_ENDPOINT=https://provider.example/api/send
+SMS_HTTP_TOKEN=managed-outside-source-control
+```
+
+After deploying application files and dependencies:
+
+```bash
+php artisan migrate --force
+php artisan optimize
+php artisan queue:restart
+```
+
+Run long-lived workers under Supervisor, systemd, Docker, or an equivalent process manager. A Supervisor configuration can look like this:
+
+```ini
+[program:basic-school-lms-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/basic-school-lms/artisan queue:work --queue=sms,emails,default --sleep=3 --tries=3 --timeout=60 --max-time=3600
+directory=/var/www/basic-school-lms
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/log/supervisor/basic-school-lms-worker.log
+stopwaitsecs=3600
+```
+
+Reload the Supervisor configuration after adding or changing it:
+
+```bash
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl restart basic-school-lms-worker:*
+```
+
+Use `queue:work` under a process manager for production rather than `queue:listen`. Monitor `failed_jobs`, `storage/logs/laravel.log`, provider responses, and SMS delivery history. Before manually retrying failed SMS jobs, check whether the provider accepted the original request; the recipient job sends an idempotency key to help reduce duplicate delivery risk.
 
 ## Testing and code quality
 
