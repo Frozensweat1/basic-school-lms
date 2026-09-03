@@ -185,7 +185,7 @@ npm.cmd run build
 
 ### 7. Start the application
 
-The provided Composer development command starts the Laravel server, three concurrent queue workers (`sms`, `emails`, and `default`), the log viewer, and Vite together:
+The provided Composer development command starts the Laravel server, one queue worker for the `default` queue, the log viewer, and Vite together:
 
 ```bash
 composer run dev
@@ -207,18 +207,10 @@ npm run dev
 ```
 
 ```bash
-php artisan queue:work --queue=sms --tries=3 --timeout=60
-```
-
-```bash
-php artisan queue:work --queue=emails --tries=3 --timeout=60
-```
-
-```bash
 php artisan queue:work --queue=default --tries=3 --timeout=60
 ```
 
-Run all three workers when testing concurrent SMS, email, announcements, and notification delivery. SMS campaigns create one queued job per deliverable phone number.
+All application jobs, including SMS, email, reports, announcements, and notifications, use the `default` queue. Run this worker during local development.
 
 ## Demo accounts
 
@@ -267,15 +259,7 @@ The default configuration uses the database queue:
 QUEUE_CONNECTION=database
 ```
 
-Run one worker per queue during development and configure one managed worker per queue in production. This allows SMS, email, and default jobs to be processed concurrently:
-
-```bash
-php artisan queue:work --queue=sms --sleep=3 --tries=3 --timeout=60
-```
-
-```bash
-php artisan queue:work --queue=emails --sleep=3 --tries=3 --timeout=60
-```
+Run one worker for the `default` queue during development and production. All application jobs are processed by this worker:
 
 ```bash
 php artisan queue:work --queue=default --sleep=3 --tries=3 --timeout=60
@@ -300,7 +284,7 @@ SMS_CONNECTION=http
 SMS_HTTP_ENDPOINT=https://provider.example/api/send
 SMS_HTTP_TOKEN=replace-with-provider-token
 SMS_SENDER_ID=YourSchool
-SMS_QUEUE=sms
+SMS_QUEUE=default
 ```
 
 The HTTP adapter sends `to`, `message`, and `sender` by default, authenticates with `Authorization: Bearer <token>`, and reads `message_id` and `status` from the JSON response. Provider-specific request fields and response paths can be changed with the `SMS_HTTP_*` variables documented in `.env.example`. Never commit `SMS_HTTP_TOKEN` or production credentials.
@@ -337,7 +321,7 @@ php artisan optimize:clear
 
 ## Production queue and job deployment
 
-Use a real queue backend and a process manager in production. The database queue is suitable for a small single-server deployment; Redis is preferable for higher throughput or multiple workers.
+Use a real queue backend and a process manager in production. The database queue is suitable for a small single-server deployment; Redis is preferable for higher throughput.
 
 Example production values:
 
@@ -346,7 +330,7 @@ APP_ENV=production
 APP_DEBUG=false
 QUEUE_CONNECTION=database
 SMS_CONNECTION=http
-SMS_QUEUE=sms
+SMS_QUEUE=default
 SMS_HTTP_ENDPOINT=https://provider.example/api/send
 SMS_HTTP_TOKEN=managed-outside-source-control
 ```
@@ -362,9 +346,9 @@ php artisan queue:restart
 Run long-lived workers under Supervisor, systemd, Docker, or an equivalent process manager. A Supervisor configuration can look like this:
 
 ```ini
-[program:basic-school-lms-sms-worker]
+[program:basic-school-lms-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php /var/www/basic-school-lms/artisan queue:work --queue=sms --sleep=3 --tries=3 --timeout=60 --max-time=3600
+command=php /var/www/basic-school-lms/artisan queue:work --queue=default --sleep=3 --tries=3 --timeout=60 --max-time=3600
 directory=/var/www/basic-school-lms
 autostart=true
 autorestart=true
@@ -372,14 +356,12 @@ stopasgroup=true
 killasgroup=true
 numprocs=1
 redirect_stderr=true
-stdout_logfile=/var/log/supervisor/basic-school-lms-sms-worker.log
+stdout_logfile=/var/log/supervisor/basic-school-lms-worker.log
 stopwaitsecs=3600
 ```
 
-Create equivalent Supervisor programs named `basic-school-lms-emails-worker` and `basic-school-lms-default-worker`, changing only `--queue=sms` and the log filename to `emails` and `default`. Run all three programs together:
-
 ```bash
-sudo supervisorctl restart basic-school-lms-sms-worker:* basic-school-lms-emails-worker:* basic-school-lms-default-worker:*
+sudo supervisorctl restart basic-school-lms-worker:*
 ```
 
 Reload the Supervisor configuration after adding or changing it:

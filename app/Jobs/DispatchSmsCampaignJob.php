@@ -24,7 +24,7 @@ class DispatchSmsCampaignJob implements ShouldQueue
         if (! SmsCampaign::query()->whereKey($this->campaignId)->exists()) return;
         $service->markProcessing($this->campaignId);
         SmsRecipient::query()->where('sms_campaign_id', $this->campaignId)->where('status', SmsRecipient::STATUS_QUEUED)->select('id')->chunkById(250, function ($recipients): void {
-            foreach ($recipients as $recipient) SendSmsRecipientJob::dispatch($recipient->id)->onQueue(config('sms.queue', 'sms'));
+            foreach ($recipients as $recipient) SendSmsRecipientJob::dispatch($recipient->id)->onQueue('default');
         });
         $service->refreshStatus($this->campaignId);
     }

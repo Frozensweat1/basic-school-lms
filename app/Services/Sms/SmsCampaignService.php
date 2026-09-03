@@ -102,7 +102,7 @@ class SmsCampaignService
             return $campaign;
         });
 
-        DispatchSmsCampaignJob::dispatch($campaign->id)->onQueue(config('sms.queue', 'sms'))->afterCommit();
+        DispatchSmsCampaignJob::dispatch($campaign->id)->onQueue('default')->afterCommit();
         $this->auditLogger->record('sms.campaign_queued', $campaign, newValues: ['mode' => $campaign->mode, 'audiences' => $campaign->audiences, 'recipient_count' => $campaign->recipient_count, 'skipped_count' => $campaign->skipped_count]);
 
         return $campaign->fresh(['creator', 'schoolClass']);
@@ -119,7 +119,7 @@ class SmsCampaignService
             return $count;
         });
         if ($count > 0) {
-            DispatchSmsCampaignJob::dispatch($campaign->id)->onQueue(config('sms.queue', 'sms'))->afterCommit();
+            DispatchSmsCampaignJob::dispatch($campaign->id)->onQueue('default')->afterCommit();
             $this->auditLogger->record('sms.campaign_retried', $campaign, newValues: ['retry_count' => $count]);
         }
         return $count;

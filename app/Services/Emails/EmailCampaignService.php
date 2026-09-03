@@ -147,7 +147,7 @@ class EmailCampaignService
             return $campaign;
         });
 
-        DispatchEmailCampaignJob::dispatch($campaign->id)->onQueue('emails')->afterCommit();
+        DispatchEmailCampaignJob::dispatch($campaign->id)->onQueue('default')->afterCommit();
 
         $this->auditLogger->record('email.campaign_queued', $campaign, newValues: [
             'mode' => $campaign->mode,
@@ -189,7 +189,7 @@ class EmailCampaignService
         });
 
         if ($retryCount > 0) {
-            DispatchEmailCampaignJob::dispatch($campaign->id)->onQueue('emails')->afterCommit();
+            DispatchEmailCampaignJob::dispatch($campaign->id)->onQueue('default')->afterCommit();
             $this->auditLogger->record('email.campaign_retried', $campaign, newValues: ['retry_count' => $retryCount]);
         }
 

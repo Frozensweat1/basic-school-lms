@@ -5,7 +5,7 @@ return [
     'default_country_code' => env('SMS_DEFAULT_COUNTRY_CODE', '233'),
     'restrict_to_default_country' => env('SMS_RESTRICT_TO_DEFAULT_COUNTRY', true),
     'sender_id' => env('SMS_SENDER_ID'),
-    'queue' => env('SMS_QUEUE', 'sms'),
+    'queue' => env('SMS_QUEUE', 'default'),
     'max_recipients' => (int) env('SMS_MAX_RECIPIENTS', 5000),
     'max_segments' => (int) env('SMS_MAX_SEGMENTS', 3),
 

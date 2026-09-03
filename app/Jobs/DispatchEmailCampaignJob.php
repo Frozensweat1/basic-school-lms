@@ -33,7 +33,7 @@ class DispatchEmailCampaignJob implements ShouldQueue
             ->select('id')
             ->chunkById(250, function ($recipients): void {
                 foreach ($recipients as $recipient) {
-                    SendEmailRecipientJob::dispatch($recipient->id)->onQueue('emails');
+                    SendEmailRecipientJob::dispatch($recipient->id)->onQueue('default');
                 }
             });
 

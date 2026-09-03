@@ -217,7 +217,7 @@ class Index extends Component
 
         try {
             QueueWorkerHealthCheckJob::dispatch($this->queueHealthToken)
-                ->onQueue(config('sms.queue', 'sms'));
+                ->onQueue('default');
         } catch (Throwable $exception) {
             $this->queueHealthStatus = 'failed';
             LivewireAlert::title('Unable to test the queue worker')->error()->asToast()->position('top-end')->show();

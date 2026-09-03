@@ -23,7 +23,7 @@ class GenerateReportCardJob implements ShouldQueue
         public Term $term,
         public int $schoolClassId,
     ) {
-        $this->onQueue('reports');
+        $this->onQueue('default');
     }
 
     public function backoff(): array
